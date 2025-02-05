@@ -1,0 +1,97 @@
+sot_url = "ssh://git@github.com/NeuralQXLab/netket_pro.git"
+sot_gh_url = "https://github.com/NeuralQXLab/netket_pro"
+
+public_url = "ssh://git@github.com/NeuralQXLab/nqxpack.git"
+public_gh_url = "https://github.com/NeuralQXLab/nqxpack"
+
+#sot_url = "file:///Users/filippo.vicentini/Dropbox/Ricerca/Codes/Python/netket_pro"
+#public_url = "file:///Users/filippo.vicentini/Dropbox/Ricerca/Codes/Python/nqxpack"
+
+bot_author = "Quantum AI Lab Bot <quantumailabx@gmail.com>"
+
+copybara_transforms = [
+    core.move("packages/nqxpack", "nqxpack/"),
+    #core.move("test/nqxpack", "test/nqxpack"),
+    #core.move("test/common", "test/common"),
+    core.move("design/nqxpack", "design"),
+    #core.move("docs/packages/nqxpack", "docs/nqxpack"),
+    core.move(".copybara/nqxpack", ".copybara/"),
+]
+
+nqx_origin = glob([
+        ".copybara/**",
+        "packages/nqxpack/**",
+        "test/nqxpack/**",
+        "test/common/**",
+        "design/nqxpack/**",
+        "examples/nqxpack/**",
+        "docs/packages/nqxpack/**",
+        ],
+        exclude = [
+            "**/_version.py",
+            "deepnets/**",
+            "ext/**",
+            "README.md",
+            "LICENSE",
+            "pyproject.toml",
+            #"packages/**"
+            ],
+    )
+nqx_target = glob([
+        "nqxpack/**",
+        "test/nqxpack/**",
+        "test/common/**",
+        "design/**",
+        "examples/**",
+        "docs/nqxpack/**",
+        ".copybara/**",
+        ], 
+        exclude = [
+            "**/_version.py"
+            ],
+        )
+
+# This workflow pushes changes from Omnia to NetKet_pro
+core.workflow(
+    name = "push_to_public",
+    origin = git.origin(
+        url = sot_url,
+        ref = "main",
+    ),
+    destination = git.destination(
+        url = public_url,
+        fetch = "main",
+        push = "main",
+    ),
+
+    origin_files = nqx_origin,
+    destination_files = nqx_target,
+    authoring = authoring.pass_thru(bot_author),
+    transformations=copybara_transforms
+)
+
+transformations = [
+    metadata.save_author(),
+    metadata.expose_label("COPYBARA_INTEGRATE_REVIEW"),
+    metadata.replace_message("${GITHUB_PR_TITLE}\n\n${GITHUB_PR_BODY}\n\nSubmitted by: @${GITHUB_PR_USER}\n\nExternal PR number: #${GITHUB_PR_NUMBER}"),
+]
+
+core.workflow(
+    name = "pull_from_public",
+    origin = git.github_pr_origin(
+        url = public_gh_url,
+        state = "ALL",
+        use_merge = True,
+    ),
+    destination = git.github_pr_destination(
+        url = sot_gh_url,
+        destination_ref = "main", # TODO: Update to master after test
+        integrates = [],
+    ),
+    mode = "CHANGE_REQUEST",
+    set_rev_id = False,
+    origin_files = nqx_target,
+    destination_files = nqx_origin,
+    authoring = authoring.pass_thru(bot_author),
+    transformations = transformations + core.reverse(copybara_transforms),
+)
