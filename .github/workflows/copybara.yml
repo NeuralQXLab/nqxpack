@@ -2,7 +2,7 @@ name: Mirror OS PRs to internal monorepo
 on:
   pull_request_target:
     branches:
-      - "master"
+      - "main"
     types:
       - reopened
       - opened
