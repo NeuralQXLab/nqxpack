@@ -3,9 +3,9 @@
 A library to save and load objects coming from Scientific Machine Learning libraries, with a special attention to Neural Quantum States from NetKet.
 
 Goals:
-    - Simple format, possible to hand-edit and inspect manually.
-    - Compatibility among Python version
-    - 
+- Simple format, possible to hand-edit and inspect manually;
+- Compatibility among Python version;
+- Allows to load Neural Networks with a single ``load`` command;
 
 ## Usage
 
