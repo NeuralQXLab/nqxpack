@@ -1,6 +1,5 @@
 __all__ = [
-    "register_serialization",
-    "register_automatic_serialization",
+    "register_serialization", "register_automatic_serialization",
     "register_closure_simple_serialization",
     "AssetManager",
 ]
