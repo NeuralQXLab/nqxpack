@@ -1,0 +1,46 @@
+name: Copybara
+
+on:
+  push:
+  pull_request_target:
+
+jobs:
+  copybara_migration:
+    runs-on: ubuntu-latest
+    name: "Push to Public repositories"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIV_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          echo "https://x-access-token:${GH_TOKEN}@api.github.com" > ~/.git-credentials
+        env:
+          SSH_PRIV_KEY: ${{ secrets.GH_BOT_SSH_PRIV_KEY }}
+          GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+
+      - name: Read some stuff
+        run: |
+          ls -alh ~/.ssh
+
+      - name: Set up Git config
+        run: |
+          git config --global user.name "Quantum AI Lab @ X - Automation Bot"
+          git config --global user.email "quantumailabx@gmail.com"
+
+      - name: Run Copybara from docker
+        run: |
+          docker run \
+            -v "${{ github.workspace }}:/usr/src/app" \
+            -v ~/.ssh:/root/.ssh:ro \
+            -v ~/.gitconfig:/root/.gitconfig \
+            -v "${{ github.workspace }}/.copybara/nqxpack/copy.bara.sky:/root/copy.bara.sky" \
+            -e COPYBARA_CONFIG=/usr/src/app/.copybara/nqxpack/copy.bara.sky \
+            -e COPYBARA_WORKFLOW=pr_from_public \
+            olivr/copybara \
+            copybara -- migrate usr/src/app/.copybara/nqxpack/copy.bara.sky
