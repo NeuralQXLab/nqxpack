@@ -13,7 +13,8 @@ os_config = {
     "PUSH_TRANSFORMATIONS": copybara_transforms,
     "PR_TRANSFORMATIONS": core.reverse(copybara_transforms),
     "PUSH_INCLUDE": [
-        ".copybara/**",
+        ".github/copybara/common-**",
+        ".github/copybara/nqx-**",
         "packages/nqxpack/**",
         "test/nqxpack/**",
         "test/common/**",
@@ -31,6 +32,7 @@ os_config = {
         # "packages/**"
     ],
     "DESTINATION_INCLUDE": [
+        ".github/**",
         "nqxpack/**",
         "test/nqxpack/**",
         "test/common/**",

@@ -61,7 +61,7 @@ jobs:
           sed -e 's#<branch_to_sync>#${{ env.branch_to_sync }}#' \
               -e 's#<sot_repo>#${{ env.sot_repo }}#' \
               -e 's#<destination_repo>#${{ env.destination_repo }}#' \
-              .github/copybara/common-copybara.bara.sky.template > .github/copybara/common-copybara.bara.sky
+              .github/copybara/common-template-copybara.bara.sky > .github/copybara/common-copybara.bara.sky
 
       - uses: hazelcast/copybara-action@main
         name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
