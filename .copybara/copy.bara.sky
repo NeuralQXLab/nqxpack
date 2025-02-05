@@ -79,7 +79,7 @@ core.workflow(
 )
 
 core.workflow(
-    name = "pr_from_public",
+    name = "pr",
     origin = git.github_pr_origin(
         url = public_gh_url,
         state = "ALL",
