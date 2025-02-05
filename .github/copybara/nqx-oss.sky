@@ -31,6 +31,8 @@ os_config = {
         # "packages/**"
     ],
     "DESTINATION_INCLUDE": [
+        ".github/copybara/common-**",
+        ".github/copybara/nqx-**",
         ".github/**",
         "nqxpack/**",
         "test/nqxpack/**",
