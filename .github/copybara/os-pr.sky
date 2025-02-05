@@ -1,0 +1,47 @@
+load("app/.github/copybara/common-copybara", "config", "pr_workflow")
+
+copybara_transforms = [
+    core.move("packages/nqxpack", "nqxpack/"),
+    # core.move("test/nqxpack", "test/nqxpack"),
+    # core.move("test/common", "test/common"),
+    core.move("design/nqxpack", "design"),
+    # core.move("docs/packages/nqxpack", "docs/nqxpack"),
+    core.move(".copybara/nqxpack", ".copybara/"),
+]
+
+os_config = {
+    "PUSH_TRANSFORMATIONS": copybara_transforms,
+    "PR_TRANSFORMATIONS": core.reverse(copybara_transforms),
+    "PUSH_INCLUDE": [
+        ".copybara/**",
+        "packages/nqxpack/**",
+        "test/nqxpack/**",
+        "test/common/**",
+        "design/nqxpack/**",
+        "examples/nqxpack/**",
+        "docs/packages/nqxpack/**",
+    ],
+    "PUSH_EXCLUDE": [
+        "**/_version.py",
+        "deepnets/**",
+        "ext/**",
+        "README.md",
+        "LICENSE",
+        "pyproject.toml",
+        # "packages/**"
+    ],
+    "DESTINATION_INCLUDE": [
+        "nqxpack/**",
+        "test/nqxpack/**",
+        "test/common/**",
+        "design/**",
+        "examples/**",
+        "docs/nqxpack/**",
+        ".copybara/**",
+    ],
+    "DESTINATION_EXCLUDE": [
+        "**/_version.py"
+    ]
+}
+
+pr_workflow(config, os_config)

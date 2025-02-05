@@ -1,57 +1,11 @@
 # Variables
 config = {
-"SOT_REPO" : "git@github.com:<sot_repo>.git",
-"SOT_BRANCH" : "<branch_to_sync>",
-"DESTINATION_REPO" : "git@github.com:<destination_repo>.git",
-"DESTINATION_BRANCH" : "<branch_to_sync>",
-"COMMITTER" : "Quantum AI Lab Bot <quantumailabx@gmail.com>",
-#"LOCAL_SOT" : "file:///usr/src/app",
-}
-
-copybara_transforms = [
-    core.move("packages/nqxpack", "nqxpack/"),
-    #core.move("test/nqxpack", "test/nqxpack"),
-    #core.move("test/common", "test/common"),
-    core.move("design/nqxpack", "design"),
-    #core.move("docs/packages/nqxpack", "docs/nqxpack"),
-    core.move(".copybara/nqxpack", ".copybara/"),
-]
-
-
-
-os_config = {
-    "PUSH_TRANSFORMATIONS" : copybara_transforms,
-    "PR_TRANSFORMATIONS" : core.reverse(copybara_transforms),
-    "PUSH_INCLUDE" : [
-        ".copybara/**",
-        "packages/nqxpack/**",
-        "test/nqxpack/**",
-        "test/common/**",
-        "design/nqxpack/**",
-        "examples/nqxpack/**",
-        "docs/packages/nqxpack/**",
-        ],
-    "PUSH_EXCLUDE" : [
-            "**/_version.py",
-            "deepnets/**",
-            "ext/**",
-            "README.md",
-            "LICENSE",
-            "pyproject.toml",
-            #"packages/**"
-            ],
-    "DESTINATION_INCLUDE": [
-        "nqxpack/**",
-        "test/nqxpack/**",
-        "test/common/**",
-        "design/**",
-        "examples/**",
-        "docs/nqxpack/**",
-        ".copybara/**",
-        ],
-    "DESTINATION_EXCLUDE":  [
-            "**/_version.py"
-            ]
+    "SOT_REPO" : "git@github.com:<sot_repo>.git",
+    "SOT_BRANCH" : "<branch_to_sync>",
+    "DESTINATION_REPO" : "git@github.com:<destination_repo>.git",
+    "DESTINATION_BRANCH" : "<branch_to_sync>",
+    "COMMITTER" : "Quantum AI Lab Bot <quantumailabx@gmail.com>",
+    #"LOCAL_SOT" : "file:///usr/src/app",
 }
 
 def add_comment_with_shadow_pr(ctx):
@@ -86,7 +40,7 @@ def pr_workflow(config, repo_config):
            metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = config["DESTINATION_REPO"].replace("git@github.com:", " ").replace(".git", "#")),
            metadata.save_author("ORIGINAL_AUTHOR"),
        ] + repo_config["PR_TRANSFORMATIONS"],
-       after_workflow = [add_comment_with_shadow_pr],
+       # after_workflow = [add_comment_with_shadow_pr],
    )
 
 def push_workflow(config, repo_config):

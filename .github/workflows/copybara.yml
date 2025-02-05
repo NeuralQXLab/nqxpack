@@ -8,15 +8,18 @@ on:
       - opened
       - synchronize
       - edited
+
 env:
   branch_to_sync: ${{ github.base_ref || github.ref_name}}
   sot_repo: NeuralQXLab/netket_pro
   destination_repo: NeuralQXLab/nqxpack
+
 jobs:
   copybara-os-pr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+  
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
@@ -27,6 +30,7 @@ jobs:
         env:
           SSH_PRIV_KEY: ${{ secrets.SSH_GH_KEY }}
           GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+
       - name: Set up Git config
         run: |
           git config --global user.name "Quantum AI Lab @ X - Automation Bot"
@@ -51,12 +55,14 @@ jobs:
           done <<< "$CONTENT"
         env:
           GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+
       - name: Generate copybara config file
         run: |
           sed -e 's#<branch_to_sync>#${{ env.branch_to_sync }}#' \
               -e 's#<sot_repo>#${{ env.sot_repo }}#' \
               -e 's#<destination_repo>#${{ env.destination_repo }}#' \
-              .github/workflows/common-copybara.bara.sky.template > .github/workflows/common-copybara.bara.sky
+              .github/copybara/common-copybara.bara.sky.template > .github/copybara/common-copybara.bara.sky
+
       - uses: hazelcast/copybara-action@main
         name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
         with:
@@ -66,4 +72,4 @@ jobs:
           sot_branch: ${{ env.branch_to_sync }}
           destination_repo: ${{ env.destination_repo }}
           copybara_options: "--nogit-destination-rebase"
-          custom_config: .github/workflows/os-pr.sky
+          custom_config: .github/copybara/os-pr.sky
