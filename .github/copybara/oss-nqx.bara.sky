@@ -1,0 +1,5 @@
+load("app/.github/copybara/common-copybara", "config", "pr_workflow")
+
+load("app/.github/copybara/common-nqx", "os_config")
+
+pr_workflow(config, os_config)

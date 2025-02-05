@@ -1,0 +1,52 @@
+push_commons = [
+    ".github/copybara/common-**",
+    "test/common/**",
+]
+push_exclide_common = [
+    "**/_version.py",
+    "deepnets/**",
+    "ext/**",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+destination_common = [
+    ".github/copybara/common-**",
+    "test/common/**",
+]
+
+copybara_transforms = [
+    core.move("packages/nqxpack", "nqxpack/"),
+    # core.move("test/nqxpack", "test/nqxpack"),
+    # core.move("test/common", "test/common"),
+    core.move("design/nqxpack", "design"),
+    # core.move("docs/packages/nqxpack", "docs/nqxpack"),
+]
+
+os_config = {
+    "PUSH_TRANSFORMATIONS": copybara_transforms,
+    "PR_TRANSFORMATIONS": core.reverse(copybara_transforms),
+    "PUSH_INCLUDE": [
+        ".github/copybara/oss-nqx**",
+        "packages/nqxpack/**",
+        "test/nqxpack/**",
+        "design/nqxpack/**",
+        "examples/nqxpack/**",
+        "docs/packages/nqxpack/**",
+    ] + push_commons,
+    "PUSH_EXCLUDE": [
+
+    ] + push_exclide_common,
+    "DESTINATION_INCLUDE": [
+        ".github/copybara/oss-nqx**",
+        ".github/**",
+        "nqxpack/**",
+        "test/nqxpack/**",
+        "design/**",
+        "examples/**",
+        "docs/nqxpack/**",
+    ] + destination_common,
+    "DESTINATION_EXCLUDE": [
+        "**/_version.py"
+    ]
+}
