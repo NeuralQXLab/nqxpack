@@ -39,7 +39,6 @@ os_config = {
     ] + push_exclide_common,
     "DESTINATION_INCLUDE": [
         ".github/copybara/oss-nqx**",
-        ".github/**",
         "nqxpack/**",
         "test/nqxpack/**",
         "design/**",
