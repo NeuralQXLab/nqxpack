@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !contains(github.ref, 'master')}}
+
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-tags: true
+
+      - name: Install the latest version of uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+  
+      - name: Tests
+        run: |
+          uv run pytest
+
+      # - name: Upload coverage reports to Codecov
+      #   if: always()
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }} # required
+      #     verbose: true # optional (default = false)
