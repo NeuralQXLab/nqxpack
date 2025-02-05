@@ -6,7 +6,6 @@ copybara_transforms = [
     # core.move("test/common", "test/common"),
     core.move("design/nqxpack", "design"),
     # core.move("docs/packages/nqxpack", "docs/nqxpack"),
-    core.move(".copybara/nqxpack", ".copybara/"),
 ]
 
 os_config = {
@@ -39,7 +38,6 @@ os_config = {
         "design/**",
         "examples/**",
         "docs/nqxpack/**",
-        ".copybara/**",
     ],
     "DESTINATION_EXCLUDE": [
         "**/_version.py"
