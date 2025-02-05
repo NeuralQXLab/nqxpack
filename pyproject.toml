@@ -1,0 +1,17 @@
+[project]
+name = "nqxpack"
+version = "0.1.0"
+description = "Library to serialise objects arising from scientific and Machine Learning libraries, including NetKet."
+readme = "README.md"
+authors = [
+    { name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+nqxpack = "nqxpack:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
