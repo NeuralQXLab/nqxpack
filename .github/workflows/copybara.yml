@@ -39,8 +39,8 @@ jobs:
             -v "${{ github.workspace }}:/usr/src/app" \
             -v ~/.ssh:/root/.ssh:ro \
             -v ~/.gitconfig:/root/.gitconfig \
-            -v "${{ github.workspace }}/.copybara/nqxpack/copy.bara.sky:/root/copy.bara.sky" \
-            -e COPYBARA_CONFIG=/usr/src/app/.copybara/nqxpack/copy.bara.sky \
+            -v "${{ github.workspace }}/.copybara/copy.bara.sky:/root/copy.bara.sky" \
+            -e COPYBARA_CONFIG=/usr/src/app/.copybara/copy.bara.sky \
             -e COPYBARA_WORKFLOW=pr_from_public \
             olivr/copybara \
-            copybara -- migrate usr/src/app/.copybara/nqxpack/copy.bara.sky
+            copybara -- migrate usr/src/app/.copybara/copy.bara.sky
