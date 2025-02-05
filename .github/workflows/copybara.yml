@@ -1,33 +1,46 @@
-name: Copybara
-
+name: Copy OS PR to Monorepo
 on:
-  push:
   pull_request_target:
     branches:
-      - "main"
+      - "master"
+      - "[0-9]+.[0-9]+.z"
+      - "[0-9]+.[0-9]+.[0-9]"
+      - "[0-9]+.[0-9]+.[0-9]+-BETA-[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-DEVEL-[0-9]+"
+      - "data-migration-5.3"
     types:
       - reopened
       - opened
       - synchronize
       - edited
-
+env:
+  branch_to_sync: ${{ github.base_ref || github.ref_name}}
+  sot_repo: NeuralQXLab/netket_pro
+  destination_repo: NeuralQXLab/nqxpack
 jobs:
-  copybara_migration:
+  copybara-os-pr:
     runs-on: ubuntu-latest
-    name: "Push to Public repositories"
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Get PR number
-        run: echo "PR number is ${PR_NUMBER}"
+      - uses: actions/checkout@v4
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIV_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          echo "https://x-access-token:${GH_TOKEN}@api.github.com" > ~/.git-credentials
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SSH_PRIV_KEY: ${{ secrets.GH_BOT_SSH_PRIV_KEY }}
+          GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+      - name: Set up Git config
+        run: |
+          git config --global user.name "Quantum AI Lab @ X - Automation Bot"
+          git config --global user.email "quantumailabx@gmail.com"
 
       - name: Reopen referenced PRs
         if: github.event.action == 'reopened'
         run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
           CONTENT="$(gh pr view "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body' | tac)"
 
           while read -r line; do
@@ -43,35 +56,38 @@ jobs:
           done <<< "$CONTENT"
         env:
           GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-
-      - name: Set up SSH key
+      - name: Generate copybara config file
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIV_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          echo "https://x-access-token:${GH_TOKEN}@api.github.com" > ~/.git-credentials
-        env:
-          SSH_PRIV_KEY: ${{ secrets.GH_BOT_SSH_PRIV_KEY }}
-          GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
-
-      - name: Read some stuff
-        run: |
-          ls -alh ~/.ssh
-
-      - name: Set up Git config
-        run: |
-          git config --global user.name "Quantum AI Lab @ X - Automation Bot"
-          git config --global user.email "quantumailabx@gmail.com"
-
+          sed -e 's#<branch_to_sync>#${{ env.branch_to_sync }}#' \
+              -e 's#<sot_repo>#${{ env.sot_repo }}#' \
+              -e 's#<destination_repo>#${{ env.destination_repo }}#' \
+              .github/workflows/common-copybara.bara.sky.template > .github/workflows/common-copybara.bara.sky
       - uses: hazelcast/copybara-action@main
         name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
         with:
           ssh_key: ${{ secrets.GH_BOT_SSH_PRIV_KEY }}
           access_token: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
-          sot_repo: NeuralQXLab/netket_pro
-          sot_branch: main
-          destination_repo: NeuralQXLab/nqxpack
+          sot_repo: ${{ env.sot_repo }}
+          sot_branch: ${{ env.branch_to_sync }}
+          destination_repo: ${{ env.destination_repo }}
           copybara_options: "--nogit-destination-rebase"
-          custom_config: .copybara/copy.bara.sky
+          custom_config: .github/workflows/os-pr.sky
+      - name: Copy labels, assignees, reviewers, milestone to other PR
+        run: |
+          SOURCE_REPO="${{ github.repository }}"
+          SOURCE_PR="${{ github.event.pull_request.number }}"
+          CONTENT="$(gh pr view "$SOURCE_PR" --json "body,comments" -q '.body, .comments[].body')"
+
+          while read -r line; do
+            if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+/[^/]+)#([0-9]+) ]]; then
+              TARGET_REPO="${BASH_REMATCH[2]}"
+              TARGET_PR="${BASH_REMATCH[3]}"
+              .github/workflows/common-synchronize-pr-labels.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-assignees.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-reviewers.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+              .github/workflows/common-synchronize-pr-milestone.sh $SOURCE_REPO $SOURCE_PR $TARGET_REPO $TARGET_PR
+            fi
+          done <<< "$CONTENT"
+        env:
+          GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+
