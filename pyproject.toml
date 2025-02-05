@@ -3,11 +3,15 @@ name = "nqxpack"
 version = "0.1.0"
 description = "Library to serialise objects arising from scientific and Machine Learning libraries, including NetKet."
 readme = "README.md"
-authors = [
-    { name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }
-]
+authors = [{ name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "flax>=0.10.2",
+    "jax>=0.4.35",
+    "netket>=3.16.0.post2",
+    "numpy>=2",
+    "omegaconf>=2",
+]
 
 [project.scripts]
 nqxpack = "nqxpack:main"
@@ -15,3 +19,47 @@ nqxpack = "nqxpack:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+    "pytest>=8.3.4",
+]
+
+# Development tools
+[tool.black]
+line-length = 88
+target-version = ['py310', 'py311', 'py312', 'py313']
+include = '\.pyi?$'
+exclude = '''/(\.eggs|\.git|\.hg|\.mypy_cache|\.tox|\.venv|_build|buck-out|build|dist)/'''
+
+[tool.coverage.run]
+branch = true
+parallel = true
+command_line = "-m pytest --verbose test"
+source = ["packages/**"]
+
+[tool.pytest.ini_options]
+addopts = "--color=yes --verbose --durations=100 --tb=short"
+doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
+#filterwarnings = []
+testpaths = ["test"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+#exclude = []
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "D410", "UP"]
+fixable = ["E", "F", "W", "D", "UP"]
+ignore = [
+    "E501","E731","E741",
+    "D100","D101","D102","D103","D105","D107","D404","D417"
+    ]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"examples/*" = ["F401", "E402"]
+"docs/conf.py" = ["F401", "E402"]
+"docs/sphinx_extensions/*" = ["F401", "E402", "UP"]
