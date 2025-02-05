@@ -3,6 +3,13 @@ name: Copybara
 on:
   push:
   pull_request_target:
+    branches:
+      - "main"
+    types:
+      - reopened
+      - opened
+      - synchronize
+      - edited
 
 jobs:
   copybara_migration:
@@ -12,6 +19,29 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Get PR number
+        run: echo "PR number is ${{ github.event.pull_request.number }}"
+
+      - name: Reopen referenced PRs
+        if: github.event.action == 'reopened'
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          CONTENT="$(gh pr view "$PR_NUMBER" --json "body,comments" -q '.body, .comments[].body' | tac)"
+
+          while read -r line; do
+            if [[ $line =~ (Closes|Internal\ PR)\ ([^/]+)/([^/]+)#([0-9]+) ]]; then
+              OWNER="${BASH_REMATCH[2]}"
+              REPO="${BASH_REMATCH[3]}"
+              OTHER_PR="${BASH_REMATCH[4]}"
+              echo "Reopening PR: $OWNER/$REPO/$OTHER_PR"
+              gh pr reopen --repo "$OWNER/$REPO" \
+               --comment "This pull request has been reopened because of reopening of https://github.com/${{ github.repository }}/pull/${PR_NUMBER}" \
+              $OTHER_PR
+            fi
+          done <<< "$CONTENT"
+        env:
+          GH_TOKEN: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
 
       - name: Set up SSH key
         run: |
@@ -33,14 +63,13 @@ jobs:
           git config --global user.name "Quantum AI Lab @ X - Automation Bot"
           git config --global user.email "quantumailabx@gmail.com"
 
-      - name: Run Copybara from docker
-        run: |
-          docker run \
-            -v "${{ github.workspace }}:/usr/src/app" \
-            -v ~/.ssh:/root/.ssh:ro \
-            -v ~/.gitconfig:/root/.gitconfig \
-            -v "${{ github.workspace }}/.copybara/copy.bara.sky:/root/copy.bara.sky" \
-            -e COPYBARA_CONFIG=/usr/src/app/.copybara/copy.bara.sky \
-            -e COPYBARA_WORKFLOW=pr_from_public \
-            olivr/copybara \
-            copybara -- migrate usr/src/app/.copybara/copy.bara.sky
+      - uses: hazelcast/copybara-action@main
+        name: "Copybara PR #${{ github.event.pull_request.number }} -> ${{ env.branch_to_sync }}"
+        with:
+          ssh_key: ${{ secrets.GH_BOT_SSH_PRIV_KEY }}
+          access_token: ${{ secrets.GH_BOT_GITHUB_TOKEN }}
+          sot_repo: NeuralQXLab/netket_pro
+          sot_branch: main
+          destination_repo: NeuralQXLab/nqxpack
+          copybara_options: "--nogit-destination-rebase"
+          custom_config: .copybara/copy.bara.sky
