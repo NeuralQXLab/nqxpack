@@ -55,18 +55,21 @@ def serialize_object(obj):
     elif isinstance(obj, list):
         return [serialize_object(x, path=i) for i, x in enumerate(obj)]
     elif isinstance(obj, tuple):
-        return {
-            "_target_": "builtins.tuple",
-            "_args_": (
-                tuple(
-                    serialize_object(
-                        x,
-                        path=("_args_", i),
-                    )
-                    for i, x in enumerate(obj)
-                ),
-            ),
-        }
+        if len(obj) == 0:
+            return {"_target_": "builtins.tuple"}
+        else:
+            return {
+                "_target_": "builtins.tuple",
+                "_args_": [
+                    [
+                        serialize_object(
+                            x,
+                            path=("_args_", i),
+                        )
+                        for i, x in enumerate(obj)
+                    ],
+                ],
+            }
     elif isinstance(obj, dict):
         # It's rare (though it happnens, for example in nnx.NodeMapping) but some dicts
         # have non-string keys. We need to convert them to strings. We do this by wrapping
