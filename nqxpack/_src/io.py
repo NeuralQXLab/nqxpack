@@ -46,6 +46,8 @@ class ZipArchive:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if self._archive is None:
+            return
         return self._archive.__exit__(exc_type, exc_value, traceback)
 
     def __contains__(self, key):
