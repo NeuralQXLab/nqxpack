@@ -86,7 +86,7 @@ def serialize_DoubledHilbert(hi):
     }
 
 
-def deserialize_DoubledHilbert(obj, *, path, asset_manager):
+def deserialize_DoubledHilbert(obj):
     return DoubledHilbert(obj["hilb"])
 
 
