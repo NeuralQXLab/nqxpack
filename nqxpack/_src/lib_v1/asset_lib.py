@@ -6,6 +6,7 @@ from zipfile import ZipFile
 from flax import serialization
 
 from nqxpack._src.distributed import is_master_process
+from nqxpack._src.contextmgr import current_context
 
 
 class AssetManager(ABC):
@@ -34,7 +35,7 @@ class AssetManager(ABC):
         """
         pass
 
-    def write_asset(self, asset_name, value: bytes, path: tuple[str, ...] = ()):
+    def write_asset(self, asset_name, value: bytes, path: tuple[str, ...] = None):
         """
         Write an asset to the backend
 
@@ -43,14 +44,19 @@ class AssetManager(ABC):
             value: The asset to write, which should be a binary blob.
             path: Path to the asset, as a tuple of strings. This is optional.
         """
+        if path is None:
+            path = current_context().raw_path
         key = "/".join(path + (asset_name,))
         return self._write(key, value)
 
-    def read_asset(self, asset_name, path: tuple[str, ...] = ()):
+    def read_asset(self, asset_name, path: tuple[str, ...] = None):
+        if path is None:
+            path = current_context().raw_path
+
         key = "/".join(path + (asset_name,))
         return self._read(key)
 
-    def write_msgpack(self, asset_name, value: dict, path: tuple[str, ...] = ()):
+    def write_msgpack(self, asset_name, value: dict, path: tuple[str, ...] = None):
         """
         Write a dictionary of msgpack-serializable objects to the asset manager.
 
@@ -62,7 +68,7 @@ class AssetManager(ABC):
         if is_master_process():
             self.write_asset(asset_name, serialization.msgpack_serialize(value), path)
 
-    def read_msgpack(self, asset_name, path: tuple[str, ...] = ()):
+    def read_msgpack(self, asset_name, path: tuple[str, ...] = None):
         """
         Reads a dictionary of data serialized with msgpack to the asset manager.
 

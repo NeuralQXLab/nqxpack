@@ -202,13 +202,28 @@ def deserialize_custom_object(obj):
             target_str = target_str[1:]
         target = _resolve_qualname(target_str)
 
-        if is_custom:
-            return TYPE_DESERIALIZATION_REGISTRY[target](obj)
-        else:
-            deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
-                target, partial(default_deserialization, target)
-            )
-            return deserialization_fun(obj)
+        try:
+            if is_custom:
+                return TYPE_DESERIALIZATION_REGISTRY[target](obj)
+            else:
+                deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
+                    target, partial(default_deserialization, target)
+                )
+                return deserialization_fun(obj)
+        except Exception as err:
+            global_path = current_context().path
+            raise RuntimeError(
+                f"""
+                Impossible to reconstruct object of type `{target}` at {global_path}.
+
+                The custom deserialization function was called with the following arguments,
+                and failed with the error reported above.
+
+                The argumnts where:
+                {obj}
+
+                """
+            ) from err
     else:
         global_path = current_context().path
         raise ValueError(

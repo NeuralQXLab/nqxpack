@@ -144,10 +144,11 @@ def serialize_np(cls, obj):
 
 
 def deserialize_np(cls, obj):
-    if isinstance(obj["data"], list):
-        return np.array(obj["data"], dtype=obj["dtype"]).reshape(obj["shape"])
+    data = obj["data"]
+    if isinstance(data, (list, float, int, complex)):
+        return np.array(data, dtype=obj["dtype"]).reshape(obj["shape"])
     else:
-        return np.frombuffer(obj["data"], dtype=obj["dtype"]).reshape(obj["shape"])
+        return np.frombuffer(data, dtype=obj["dtype"]).reshape(obj["shape"])
 
 
 register_serialization(

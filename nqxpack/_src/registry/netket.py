@@ -190,7 +190,7 @@ def _replicate(x):
 # For model states using frameworks that
 def _unpack_variables(state_dict, obj):
     if "variables_structure" in obj:
-        variables_flat, _ = jax.tree_flatten(state_dict["variables"])
+        variables_flat, _ = jax.tree.flatten(state_dict["variables"])
         variables = jax.tree.unflatten(obj["variables_structure"], variables_flat)
         del obj["variables_structure"], variables_flat
     else:
@@ -202,12 +202,11 @@ def serialize_mcstate(
     state: MCState,
 ) -> dict:
     asset_manager = current_context().asset_manager
-    path = current_context().raw_path
 
     state_dict = serialization.to_state_dict(state)
     state_dict = jax.tree.map(_replicate, state_dict)
     variables_structure = jax.tree.structure(state.variables)
-    asset_manager.write_msgpack("state.msgpack", state_dict, path=path)
+    asset_manager.write_msgpack("state.msgpack", state_dict)
 
     return {
         "sampler": state.sampler,
@@ -221,9 +220,8 @@ def deserialize_vstate(
     obj,
 ) -> MCState:
     asset_manager = current_context().asset_manager
-    path = current_context().raw_path
 
-    state_dict = asset_manager.read_msgpack("state.msgpack", path=path)
+    state_dict = asset_manager.read_msgpack("state.msgpack")
     variables = _unpack_variables(state_dict, obj)
     state = cls(**obj, variables=variables)
     state = serialization.from_state_dict(state, state_dict)
@@ -237,11 +235,10 @@ register_serialization(MCState, serialize_mcstate, partial(deserialize_vstate, M
 def serialize_mcmixedstate(state: MCMixedState) -> dict:
 
     asset_manager = current_context().asset_manager
-    path = current_context().raw_path
 
     state_dict = serialization.to_state_dict(state)
     state_dict = jax.tree.map(_replicate, state_dict)
-    asset_manager.write_msgpack("state.msgpack", state_dict, path=path)
+    asset_manager.write_msgpack("state.msgpack", state_dict)
 
     return {
         "sampler": state.sampler,
@@ -252,9 +249,8 @@ def serialize_mcmixedstate(state: MCMixedState) -> dict:
 
 def deserialize_mcmixedstate(obj) -> MCMixedState:
     asset_manager = current_context().asset_manager
-    path = current_context().raw_path
 
-    state_dict = asset_manager.read_msgpack("state.msgpack", path=path)
+    state_dict = asset_manager.read_msgpack("state.msgpack")
     variables = _unpack_variables(state_dict, obj)
     state = MCMixedState(**obj, variables=variables)
     state = serialization.from_state_dict(state, state_dict)
@@ -266,11 +262,10 @@ register_serialization(MCMixedState, serialize_mcmixedstate, deserialize_mcmixed
 
 def serialize_fullsumstate(state: FullSumState, *, mixed_state: bool = False) -> dict:
     asset_manager = current_context().asset_manager
-    path = current_context().raw_path
 
     state_dict = serialization.to_state_dict(state)
     state_dict = jax.tree.map(_replicate, state_dict)
-    asset_manager.write_msgpack("state.msgpack", state_dict, path=path)
+    asset_manager.write_msgpack("state.msgpack", state_dict)
 
     if not mixed_state:
         hilbert = state.hilbert
