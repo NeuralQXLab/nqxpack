@@ -19,3 +19,15 @@ def deserialize_partial(obj):
 
 
 register_serialization(partial, serialize_partial, deserialize_partial)
+
+
+# frozenset
+def serialize_frozenset(obj):
+    return {"elements": list(obj)}
+
+
+def deserialize_frozenset(obj):
+    return frozenset(obj["elements"])
+
+
+register_serialization(frozenset, serialize_frozenset, deserialize_frozenset)
