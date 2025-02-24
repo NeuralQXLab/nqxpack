@@ -19,36 +19,6 @@ or (but seriously, stop using pip and start using uv)
 pip install git+https://github.com/NeuralQXLab/nqxpack.git
 ```
 
-### With `flax.nnx`
-
-Within your code:
-```python
-import nqxpack
-import jax
-from flax import nnx
-
-model = nnx.Sequential(
-    nnx.Linear(in_features=4, out_features=2, rngs=nnx.Rngs(1)),
-    nnx.gelu,
-    nnx.Linear(in_features=2, out_features=1, rngs=nnx.Rngs(1)),
-    jax.numpy.squeeze,
-)
-
-# Train it... and then check the output:
-model(jax.numpy.ones((2,4)))
-# Array([0.16373987, 0.16373987], dtype=float64)
-
-nqxpack.save(model, "mymodel.nk")
-```
-
-# To load it:
-```python
-import nqxpack
-
-model = nqxpack.load("mymodel.nk")
-model(jax.numpy.ones((2,4)))
-# Array([0.16373987, 0.16373987], dtype=float64)
-```
 
 ### With `flax.linen`
 
@@ -95,4 +65,8 @@ nqs_state_loaded.expect(operator)
 
 ## The format
 
+The format is a single zip file. You can decompress it yourself and look into it.
 
+## Feedback required
+
+If you use this library, please let us know of any issue you might find.
