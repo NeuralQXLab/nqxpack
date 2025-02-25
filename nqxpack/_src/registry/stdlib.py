@@ -1,6 +1,9 @@
 from functools import partial
 
-from nqxpack._src.lib_v1.custom_types import register_serialization
+from nqxpack._src.lib_v1.custom_types import (
+    register_serialization,
+    register_automatic_serialization,
+)
 
 
 def serialize_partial(par):
@@ -31,3 +34,7 @@ def deserialize_frozenset(obj):
 
 
 register_serialization(frozenset, serialize_frozenset, deserialize_frozenset)
+
+
+# complex
+register_automatic_serialization(complex, "real", "imag")
