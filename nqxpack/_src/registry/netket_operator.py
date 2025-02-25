@@ -51,10 +51,12 @@ def serialize_LocalOperator(op):
     operators = [_pack_array(term) for term in op.operators]
     current_context().asset_manager.write_msgpack("operators.msgpack", operators)
 
-    if hasattr(op, "_acting_on"):
-        acting_on = op._acting_on.tolist()
-    else:
-        acting_on = [list(int(o) for o in ao) for ao in op.acting_on]
+    # if hasattr(op, "_acting_on"):
+    #     acting_on = op._acting_on
+    #     if not isinstance(acting_on, list):
+    #         acting_on = acting_on.tolist()
+    # else:
+    acting_on = [list(int(o) for o in ao) for ao in op.acting_on]
 
     return {
         "hilbert": op.hilbert,
