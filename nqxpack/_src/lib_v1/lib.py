@@ -54,7 +54,7 @@ def serialize_object(obj):
         return obj
     elif isinstance(obj, list):
         return [serialize_object(x, path=i) for i, x in enumerate(obj)]
-    elif isinstance(obj, tuple):
+    elif type(obj) is tuple:
         if len(obj) == 0:
             return {"_target_": "builtins.tuple"}
         else:
