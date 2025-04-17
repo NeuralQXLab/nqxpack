@@ -1,6 +1,7 @@
 # File containing common commands for NetKet Test infrastructure
 
 from typing import Any
+import jax
 
 from functools import partial
 import os
@@ -72,6 +73,13 @@ xfailif_mpi = pytest.mark.xfail(
 """Use as a decorator to mark a test to be expected to fail only when running with
 at least 2 MPI processes.
 """
+xfailif_distributed = pytest.mark.xfail(
+    (
+        nk.utils.mpi.n_nodes > 1
+        or (nk.config.netket_experimental_sharding and jax.process_count())
+    ),
+    reason="Broken under distributed.",
+)
 
 skipif_sharding = pytest.mark.skipif(
     nk.config.netket_experimental_sharding, reason="Only run without MPI"

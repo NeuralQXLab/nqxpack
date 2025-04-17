@@ -3,6 +3,7 @@ from .common import (
     skipif_mpi,
     onlyif_mpi,
     xfailif_mpi,
+    xfailif_distributed,
     skipif_sharding,
     skipif_distributed,
     netket_disable_mpi,
