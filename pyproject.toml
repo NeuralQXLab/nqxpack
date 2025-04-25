@@ -51,8 +51,8 @@ line-length = 88
 #exclude = []
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "D410", "UP"]
-fixable = ["E", "F", "W", "D", "UP"]
+select = ["E", "F", "W", "D410"]
+fixable = ["E", "F", "W", "D"]
 ignore = [
     "E501","E731","E741",
     "D100","D101","D102","D103","D105","D107","D404","D417"
