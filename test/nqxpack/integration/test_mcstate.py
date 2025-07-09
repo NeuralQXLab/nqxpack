@@ -48,9 +48,6 @@ models_params = [pytest.param(model, id=name) for name, model in models.items()]
 def test_save_mcstate(model, tmpdir):
     if distributed.mode() == "sharding":
         tmpdir = Path(distributed.broadcast_string(str(tmpdir)))
-    elif distributed.mode() == "mpi":
-        tmpdir = nk.utils.mpi.MPI_py_comm.bcast(str(tmpdir), root=0)
-        tmpdir = Path(tmpdir)
 
     if not isinstance(model, linen.Module):
         model = model()

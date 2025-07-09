@@ -26,9 +26,6 @@ operators_params = [pytest.param(op, id=name) for name, op in operators.items()]
 def test_save_mcstate(operator, tmpdir):
     if distributed.mode() == "sharding":
         tmpdir = Path(distributed.broadcast_string(str(tmpdir)))
-    elif distributed.mode() == "mpi":
-        tmpdir = nk.utils.mpi.MPI_py_comm.bcast(str(tmpdir), root=0)
-        tmpdir = Path(tmpdir)
 
     nqxpack.save(operator, tmpdir / "operator.mpack")
     distributed.barrier("barrier 1")
