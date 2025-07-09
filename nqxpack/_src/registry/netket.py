@@ -1,5 +1,6 @@
 from functools import partial
 
+
 # flake8: noqa: E402
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
@@ -12,6 +13,7 @@ from flax import serialization
 
 # Graph
 from netket.graph import Lattice
+from netket.utils.version_check import module_version
 
 
 def serialize_Lattice(g):
@@ -143,28 +145,61 @@ register_automatic_serialization(HamiltonianRule, "operator")
 
 
 # group theory
-from netket.graph.space_group import Translation, Permutation
+from netket.graph.space_group import Translation, Permutation, TranslationGroup
 
 
 def serialize_translation(t):
-    return {
-        "permutation": t.permutation.wrapped.tolist(),
-        "displacement": t._vector.tolist(),
-    }
+    if module_version("netket") >= (3, 18, 0):
+        return {
+            "inverse_permutation_array": t.inverse_permutation_array.tolist(),
+            "displacement": t._vector.tolist(),
+        }
+    else:
+        return {
+            "permutation": t.permutation.wrapped.tolist(),
+            "displacement": t._vector.tolist(),
+        }
 
 
 register_serialization(Translation, serialize_translation)
 
 
 def serialize_permutation(t):
-    return {
-        "permutation": t.permutation.wrapped.tolist(),
-        "name": t._name,
-    }
+    if module_version("netket") >= (3, 18, 0):
+        return {
+            "inverse_permutation_array": t.inverse_permutation_array.tolist(),
+            "name": t._name,
+        }
+    else:
+        return {
+            "permutation": t.permutation.wrapped.tolist(),
+            "name": t._name,
+        }
 
 
 register_serialization(Permutation, serialize_permutation)
 
+
+# groups
+def serialize_translationgroup(tg):
+    return {"lattice": tg.lattice, "axes": tg.axes}
+
+
+def deserialize_translationgroup(obj):
+    if "elems" in obj:
+        # this was serialized with an old version of ketnet
+        from netket.graph.space_group import PermutationGroup
+
+        return PermutationGroup(**obj)
+    else:
+        return TranslationGroup(**obj)
+
+
+register_serialization(
+    TranslationGroup,
+    serialize_translationgroup,
+    deserialization_fun=deserialize_translationgroup,
+)
 
 try:
     from netket.utils.model_frameworks.nnx import NNXWrapper
