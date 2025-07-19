@@ -3,9 +3,9 @@ from pathlib import Path
 from zipfile import ZipFile
 import shutil
 
+import jax
 
 from nqxpack._src.lib_v1.asset_lib import ArchiveAssetManager, FolderAssetManager
-from nqxpack._src.distributed import is_master_process
 
 
 class ZipArchive:
@@ -31,7 +31,7 @@ class ZipArchive:
         if not isinstance(path, Path):
             path = Path(path)
 
-        if mode == "w" and not is_master_process():
+        if mode == "w" and (not jax.process_index() == 0):
             self._archive = None
         else:
             # Remove the directory and all its contents
@@ -84,7 +84,7 @@ class DirectoryArchive:
             path: A prefix to add to all keys when writing to the archive. This is optional.
         """
         self.path = Path(path)
-        if is_master_process():
+        if jax.process_index() == 0:
             if mode == "w":
                 # Remove the directory and all its contents
                 if self.path.exists() and self.path.is_dir():

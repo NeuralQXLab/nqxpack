@@ -3,12 +3,12 @@ import json
 
 from pathlib import Path
 
+import jax
 
 from nqxpack._src.lib_v1 import (
     serialize_object,
     deserialize_object,
 )
-from nqxpack._src import distributed
 from nqxpack._src.contextmgr import PackingContext
 from nqxpack._src.metadata.generate_metadata import generate_metadata
 
@@ -85,7 +85,7 @@ def save(object, path, *, zip: bool = True):
         ):
             object_json = serialize_object(object)
 
-            if distributed.is_master_process():
+            if jax.process_index() == 0:
                 with archive.open(_CONFIG_FILENAME, "w") as f:
                     data = orjson.dumps(object_json, option=orjson_options)
                     f.write(data)
@@ -93,7 +93,7 @@ def save(object, path, *, zip: bool = True):
             metadata_json = generate_metadata(
                 format_version=_FORMAT_VERSION, versioninfo=versioninfo_info
             )
-            if distributed.is_master_process():
+            if jax.process_index() == 0:
                 with archive.open(_METADATA_FILENAME, "w") as f:
                     f.write(orjson.dumps(metadata_json, option=orjson_options))
 

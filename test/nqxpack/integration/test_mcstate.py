@@ -9,8 +9,8 @@ from flax import linen
 import pytest
 
 import nqxpack
+from nqxpack._src import distributed
 import netket as nk
-from netket_pro import distributed
 
 hi = nk.hilbert.Spin(0.5, 4)
 g = nk.graph.Chain(4)

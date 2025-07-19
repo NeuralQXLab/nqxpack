@@ -43,7 +43,8 @@ def _unpack_array(array, dtype=None):
 
 
 ## LocalOperator
-from netket.operator import LocalOperator, LocalOperatorJax
+from netket.operator import LocalOperatorJax
+from netket.operator._local_operator.numba import LocalOperator as LocalOperatorNumba
 
 
 def serialize_LocalOperator(op):
@@ -82,9 +83,9 @@ def deserialize_LocalOperator(cls, obj):
 
 
 register_serialization(
-    LocalOperator,
+    LocalOperatorNumba,
     serialize_LocalOperator,
-    partial(deserialize_LocalOperator, LocalOperator),
+    partial(deserialize_LocalOperator, LocalOperatorNumba),
 )
 register_serialization(
     LocalOperatorJax,
@@ -93,7 +94,8 @@ register_serialization(
 )
 
 ## PauliStrings
-from netket.operator import PauliStrings, PauliStringsJax
+from netket.operator import PauliStringsJax
+from netket.operator._pauli_strings.numba import PauliStrings as PauliStringsNumba
 
 
 def serialize_PauliStrings(op):
@@ -131,9 +133,9 @@ def deserialize_PauliStrings(cls, obj):
 
 
 register_serialization(
-    PauliStrings,
+    PauliStringsNumba,
     serialize_PauliStrings,
-    partial(deserialize_PauliStrings, PauliStrings),
+    partial(deserialize_PauliStrings, PauliStringsNumba),
 )
 register_serialization(
     PauliStringsJax,
@@ -142,7 +144,8 @@ register_serialization(
 )
 
 ## Ising
-from netket.operator import Ising, IsingJax
+from netket.operator import IsingJax
+from netket.operator._ising.numba import Ising as IsingNumba
 
 
 def serialize_Ising(op):
@@ -155,5 +158,7 @@ def serialize_Ising(op):
     }
 
 
-register_automatic_serialization(Ising, "hilbert", "h", "J", "dtype", graph="edges")
+register_automatic_serialization(
+    IsingNumba, "hilbert", "h", "J", "dtype", graph="edges"
+)
 register_automatic_serialization(IsingJax, "hilbert", "h", "J", "dtype", graph="edges")

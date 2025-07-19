@@ -3,9 +3,9 @@ from pathlib import Path
 
 from zipfile import ZipFile
 
+import jax
 from flax import serialization
 
-from nqxpack._src.distributed import is_master_process
 from nqxpack._src.contextmgr import current_context
 
 
@@ -65,7 +65,7 @@ class AssetManager(ABC):
             value: The asset to write, which should be a dictionary of msgpack-serializable objects.
             path: Path to the asset, as a tuple of strings. This is optional.
         """
-        if is_master_process():
+        if jax.process_index() == 0:
             self.write_asset(asset_name, serialization.msgpack_serialize(value), path)
 
     def read_msgpack(self, asset_name, path: tuple[str, ...] = None):
@@ -117,7 +117,7 @@ class FolderAssetManager(AssetManager):
         if self.path is not None:
             key = self.path + key
 
-        if is_master_process():
+        if jax.process_index() == 0:
             if not (self.folder / key).parent.exists():
                 (self.folder / key).parent.mkdir(parents=True)
             with open(self.folder / key, "wb") as f:
@@ -160,7 +160,7 @@ class ArchiveAssetManager(AssetManager):
                 key = key[len(self.remove_root) :]
         if self.path is not None:
             key = self.path + key
-        if is_master_process():
+        if jax.process_index() == 0:
             with self.archive.open(key, "w") as f:
                 f.write(value)
 

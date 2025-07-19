@@ -7,7 +7,7 @@ import pytest
 
 import nqxpack
 import netket as nk
-from netket_pro import distributed
+from nqxpack._src import distributed
 
 hi = nk.hilbert.Spin(0.5, 4)
 g = nk.graph.Chain(4)
