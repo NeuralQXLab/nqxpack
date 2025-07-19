@@ -4,11 +4,11 @@ version = "0.1.2"
 description = "Library to serialise objects arising from scientific and Machine Learning libraries, including NetKet."
 readme = "README.md"
 authors = [{ name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "flax>=0.10.2",
     "jax>=0.4.35",
-    "netket>=3.16.0.post2",
+    "netket>3.18",
     "numpy>=2",
     "omegaconf>=2",
 ]
