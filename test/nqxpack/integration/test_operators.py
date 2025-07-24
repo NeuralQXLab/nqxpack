@@ -13,11 +13,12 @@ hi = nk.hilbert.Spin(0.5, 4)
 g = nk.graph.Chain(4)
 
 operators = {}
-operators["Ising"] = nk.operator.Ising(hi, h=1.0, graph=g)
-operators["LocalOperator"] = operators["Ising"].to_local_operator()
-operators["LocalOperatorJax"] = operators["LocalOperator"].to_jax_operator()
-operators["PauliStrings"] = operators["LocalOperator"].to_pauli_strings()
-operators["PauliStringsJax"] = operators["PauliStrings"].to_jax_operator()
+operators["IsingNumba"] = nk.operator.IsingNumba(hi, h=1.0, graph=g)
+operators["IsingJax"] = nk.operator.IsingJax(hi, h=1.0, graph=g)
+operators["LocalOperatorNumba"] = operators["IsingNumba"].to_local_operator()
+operators["LocalOperatorJax"] = operators["IsingJax"].to_local_operator()
+operators["PauliStringsNumba"] = operators["LocalOperatorNumba"].to_pauli_strings()
+operators["PauliStringsJax"] = operators["LocalOperatorJax"].to_pauli_strings()
 
 operators_params = [pytest.param(op, id=name) for name, op in operators.items()]
 

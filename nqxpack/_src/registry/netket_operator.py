@@ -8,7 +8,6 @@ import io
 # flake8: noqa: E402
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
-    register_automatic_serialization,
 )
 from nqxpack._src.contextmgr import current_context
 
@@ -151,14 +150,12 @@ from netket.operator._ising.numba import Ising as IsingNumba
 def serialize_Ising(op):
     return {
         "hilbert": op.hilbert,
-        "graph": op._edges,
-        "h": op.h,
-        "J": op.J,
+        "graph": op.edges.tolist(),
+        "h": op.h.item(),
+        "J": op.J.item(),
         "dtype": op.dtype,
     }
 
 
-register_automatic_serialization(
-    IsingNumba, "hilbert", "h", "J", "dtype", graph="edges"
-)
-register_automatic_serialization(IsingJax, "hilbert", "h", "J", "dtype", graph="edges")
+register_serialization(IsingNumba, serialize_Ising)
+register_serialization(IsingJax, serialize_Ising)
