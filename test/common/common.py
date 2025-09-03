@@ -45,7 +45,7 @@ skipif_sharding = pytest.mark.skipif(
 )
 
 skipif_distributed = pytest.mark.skipif(
-    nk.config.netket_experimental_sharding,
+    nk.config.netket_experimental_sharding and jax.process_count() > 1,
     reason="Skip if distributed",
 )
 
