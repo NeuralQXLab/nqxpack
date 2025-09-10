@@ -1,9 +1,29 @@
-import jax
 import numpy as np
+
+import jax
 from jax.experimental import multihost_utils
-from jax.sharding import PositionalSharding
+
+from netket.utils import module_version
+
+if module_version("jax") >= (0, 7, 0):
+    from jax.sharding import NamedSharding
+    from jax.sharding import PartitionSpec as P
 
 from netket import config as nkconfig
+
+
+def replicate_sharding():
+    """
+    Create a replicated sharding that works with both old and new JAX versions.
+    Local copy to avoid netket_pro dependency.
+    """
+    # TODO: always use the NamedShardng version
+    if module_version("jax") >= (0, 7, 0):
+        return NamedSharding(jax.sharding.get_abstract_mesh(), P())
+    else:
+        from jax.sharding import PositionalSharding
+
+        return PositionalSharding(jax.devices()).replicate()
 
 
 def mode() -> str:
@@ -92,8 +112,7 @@ def allgather(array, *, axis: int = 0, token=None):
         raise NotImplementedError("Only axis=0 is supported for now. Open a PR.")
 
     if mode() == "sharding":
-        sharding = PositionalSharding(jax.devices()).replicate()
-        sharding = sharding.reshape(tuple(1 for _ in range(array.ndim)))
+        sharding = replicate_sharding()
         array = jax.lax.with_sharding_constraint(array, sharding)
     else:
         pass

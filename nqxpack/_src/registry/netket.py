@@ -7,6 +7,7 @@ from nqxpack._src.lib_v1.custom_types import (
     register_automatic_serialization,
 )
 from nqxpack._src.contextmgr import current_context
+from nqxpack._src.distributed import replicate_sharding
 
 import jax
 from flax import serialization
@@ -216,9 +217,7 @@ from netket.vqs import MCMixedState, MCState, FullSumState
 
 def _replicate(x):
     if isinstance(x, jax.Array) and not x.is_fully_addressable:
-        return jax.lax.with_sharding_constraint(
-            x, jax.sharding.PositionalSharding(jax.devices()).replicate()
-        )
+        return jax.lax.with_sharding_constraint(x, replicate_sharding())
     return x
 
 
