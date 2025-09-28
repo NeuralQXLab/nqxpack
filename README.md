@@ -23,26 +23,60 @@ pip install git+https://github.com/NeuralQXLab/nqxpack.git
 ### With `flax.linen`
 
 Save a dictionary containing the model and the parameters.
+Note that you cannot serialise jax arrays for the time-being but it could easily be added (I'd need to think about how to handle sharding...)
 
 ```python
 import nqxpack
 import jax
 from flax import linen as nn
+import numpy as np
 
-model = nn.Sequential(
+model = nn.Sequential((
     nn.Dense(features=2),
     nn.gelu,
     nn.Dense(features=1),
     jax.numpy.squeeze,
-)
+))
 
 variables = model.init(jax.random.key(1), jax.numpy.ones((2,4)))
+variables_np = jax.tree.map(np.asarray, variables)
 
-nqxpack.save({'model':model, 'variables':variables}, "mymodel.nk")
+# for the moment cannot serialise jax arrays.
+# Could easily be implemented
+nqxpack.save({'model':model, 'variables':jax.tree.map(np.asarray, variables)}, "mymodel.nk")
 
 loaded_dict = nqxpack.load("mymodel.nk")
 loaded_model, loaded_variables = loaded_dict['model'], loaded_dict['variables']
 ```
+
+### With `flax.nnx` (WIP, not working yet)
+
+
+```python
+import nqxpack
+import jax
+from flax import nnx
+import numpy as np
+
+rngs = nnx.Rngs(0)
+model = nnx.Sequential(
+  nnx.Linear(1, 4, rngs=rngs),  # data
+  nnx.Linear(4, 2, rngs=rngs),  # data
+)
+
+graphdef, variables = nnx.split(model)
+variables_np = jax.tree.map(np.asarray, variables.to_pure_dict())
+
+# for the moment cannot serialise jax arrays.
+# Could easily be implemented
+nqxpack.save({'graphdef':graphdef, 'variables':variables_np}, "mymodel.nk")
+
+loaded_dict = nqxpack.load("mymodel.nk")
+loaded_graphdef, loaded_variables = loaded_dict['model'], loaded_dict['variables']
+
+loaded_model = nnx.merge(loaded_graphdef, loaded_variables)
+```
+
 
 ### With NetKet
 
