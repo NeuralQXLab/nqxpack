@@ -8,6 +8,7 @@ import io
 # flake8: noqa: E402
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
+    register_automatic_serialization,
 )
 from nqxpack._src.contextmgr import current_context
 
@@ -42,8 +43,7 @@ def _unpack_array(array, dtype=None):
 
 
 ## LocalOperator
-from netket.operator import LocalOperatorJax
-from netket.operator._local_operator.numba import LocalOperator as LocalOperatorNumba
+from netket.operator import LocalOperatorNumba, LocalOperatorJax
 
 
 def serialize_LocalOperator(op):
@@ -93,8 +93,7 @@ register_serialization(
 )
 
 ## PauliStrings
-from netket.operator import PauliStringsJax
-from netket.operator._pauli_strings.numba import PauliStrings as PauliStringsNumba
+from netket.operator import PauliStringsNumba, PauliStringsJax
 
 
 def serialize_PauliStrings(op):
@@ -143,19 +142,18 @@ register_serialization(
 )
 
 ## Ising
-from netket.operator import IsingJax
-from netket.operator._ising.numba import Ising as IsingNumba
+from netket.operator import IsingNumba, IsingJax
 
 
 def serialize_Ising(op):
     return {
         "hilbert": op.hilbert,
-        "graph": op.edges.tolist(),
-        "h": op.h.item(),
-        "J": op.J.item(),
+        "graph": op._edges,
+        "h": op.h,
+        "J": op.J,
         "dtype": op.dtype,
     }
 
 
-register_serialization(IsingNumba, serialize_Ising)
-register_serialization(IsingJax, serialize_Ising)
+register_automatic_serialization(IsingNumba, "hilbert", "h", "J", "dtype", graph="edges")
+register_automatic_serialization(IsingJax, "hilbert", "h", "J", "dtype", graph="edges")
