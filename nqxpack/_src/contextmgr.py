@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 import threading
 from functools import wraps
+
+if TYPE_CHECKING:
+    from nqxpack._src.lib_v1.asset_lib import AssetManager
 
 # Thread-local storage to keep track of the context per thread
 _local = threading.local()
@@ -12,7 +17,7 @@ if not hasattr(_local, "packages"):
 
 
 class PackingContext:
-    def __init__(self, asset_manager=None, metadata=None):
+    def __init__(self, asset_manager: "AssetManager | None" = None, metadata=None):
         if metadata is None:
             metadata = {}
 
@@ -59,7 +64,7 @@ class PackingContext:
         return self._metadata if key is None else self._metadata.get(key)
 
     @property
-    def asset_manager(self):
+    def asset_manager(self) -> "AssetManager":
         """Retrieves the asset manager object."""
         return self._asset_manager
 
@@ -73,7 +78,7 @@ class PackingContext:
 
 
 # Singleton access for the context manager
-def current_context():
+def current_context() -> PackingContext:
     if not hasattr(_local, "context"):
         _local.context = PackingContext()
     return _local.context
