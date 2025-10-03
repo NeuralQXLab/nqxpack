@@ -64,15 +64,12 @@ model = nnx.Sequential(
   nnx.Linear(4, 2, rngs=rngs),  # data
 )
 
-graphdef, variables = nnx.split(model)
-variables_np = jax.tree.map(np.asarray, variables.to_pure_dict())
-
-# for the moment cannot serialise jax arrays.
-# Could easily be implemented
+# Contrary to flax.linen, we need to declare how to serialise/deserialise
+# every type of nnx layer. So for now we only support Sequential and Linear
+# see registry/flax.py to add support for more layers (its easy)
 nqxpack.save({'graphdef':graphdef, 'variables':variables_np}, "mymodel.nk")
 
 loaded_dict = nqxpack.load("mymodel.nk")
-loaded_graphdef, loaded_variables = loaded_dict['model'], loaded_dict['variables']
 
 loaded_model = nnx.merge(loaded_graphdef, loaded_variables)
 ```
