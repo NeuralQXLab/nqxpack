@@ -134,9 +134,9 @@ from netket.sampler.rules import (
     MultipleRules,
     TensorRule,
 )
-if hasattr(netket.sampler.rules, "GlobalFlipRule"):
-    from netket.sampler.rules import GlobalFlipRule
-    register_automatic_serialization(GlobalFlipRule)
+if hasattr(netket.sampler.rules, "GlobalSpinFlipRule"):
+    from netket.sampler.rules import GlobalSpinFlipRule
+    register_automatic_serialization(GlobalSpinFlipRule)
 
 
 register_automatic_serialization(FixedRule)
