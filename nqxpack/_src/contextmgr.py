@@ -6,6 +6,8 @@ from functools import wraps
 if TYPE_CHECKING:
     from nqxpack._src.lib_v1.asset_lib import AssetManager
 
+from nqxpack._src.version_utils import parse_version
+
 # Thread-local storage to keep track of the context per thread
 _local = threading.local()
 
@@ -26,6 +28,15 @@ class PackingContext:
         self._asset_manager = (
             asset_manager  # Example asset manager (could be any object)
         )
+
+        # Parse package versions from metadata if they exist
+        if "packages" in metadata:
+            self._parsed_package_versions = {
+                pkg: parse_version(ver)
+                for pkg, ver in metadata["packages"].items()
+            }
+        else:
+            self._parsed_package_versions = {}
 
     def enter_path(self, path):
         """Pushes a path onto the stack."""
@@ -53,7 +64,8 @@ class PackingContext:
 
     @property
     def saved_file_package_versions(self):
-        return self._metadata["packages"]
+        """Returns parsed package versions as tuples of (major, minor, patch)."""
+        return self._parsed_package_versions
 
     def set_metadata(self, key, value):
         """Stores metadata in the context."""

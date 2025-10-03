@@ -17,6 +17,9 @@ from nqxpack._src.lib_v1.custom_types import (
     TYPE_SERIALIZATION_REGISTRY,
     TYPE_DESERIALIZATION_REGISTRY,
 )
+from nqxpack._src.lib_v1.versioned_registry import (
+    VERSIONED_DESERIALIZATION_REGISTRY,
+)
 from nqxpack._src.lib_v1.closure import (
     is_closure,
     CLOSURE_SERIALIZATION_REGISTRY,
@@ -200,18 +203,24 @@ def deserialize_custom_object(obj):
         is_custom = target_str.startswith("#")
         if is_custom:
             target_str = target_str[1:]
-        target = _resolve_qualname(target_str)
 
         try:
-            deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
-                target, partial(default_deserialization, target)
-            )
+            # First, try to get a versioned deserializer based on the class path string
+            deserialization_fun = VERSIONED_DESERIALIZATION_REGISTRY.get(target_str)
+
+            if deserialization_fun is None:
+                # Fall back to resolving the qualname and using TYPE_DESERIALIZATION_REGISTRY
+                target = _resolve_qualname(target_str)
+                deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
+                    target, partial(default_deserialization, target)
+                )
+
             return deserialization_fun(obj)
         except Exception as err:
             global_path = current_context().path
             raise RuntimeError(
                 f"""
-                Impossible to reconstruct object of type `{target}` at {global_path}.
+                Impossible to reconstruct object of type `{target_str}` at {global_path}.
 
                 The custom deserialization function was called with the following arguments,
                 and failed with the error reported above.
