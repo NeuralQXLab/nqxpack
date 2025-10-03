@@ -55,9 +55,11 @@ def register_serialization(
             output can be any type handled by the serialisation library, and will not be reserialized. This
             can be used to serialize some types that you do not actually want to serialise, and convert them
             to default types.
-        min_version: Minimum package version (inclusive) for which this serialization format is valid.
-            Default is (0, 0, 0). When registering a deserialization function, it will be registered
-            in the versioned registry with this min_version.
+        min_version: Minimum package version (inclusive) that was used to save/serialize data in this format.
+            Default is (0, 0, 0). This indicates "data saved by package version >= min_version uses this format".
+            When loading, the deserialization function will be selected based on the version that was used to save,
+            not the current package version. The deserialization function will be registered in the versioned
+            registry with this min_version.
     """
     if reconstruct_type:
         if deserialization_fun is not None:
@@ -133,8 +135,9 @@ def register_deserialization(
         class_path: Either a fully qualified class path as a string (e.g., "package.module.OldClass")
                    or a class object which will be converted to a class path.
         deserialization_fun: Function that takes a dict and returns an instance
-        min_version: Minimum package version (inclusive) for which this deserializer is valid.
-                    Default is (0, 0, 0).
+        min_version: Minimum package version (inclusive) that was used to save/serialize data in this format.
+                    Default is (0, 0, 0). This indicates "data saved by package version >= min_version uses this deserializer".
+                    When loading, this deserializer will be selected based on the version that was used to save the data.
     """
     if not isinstance(class_path, str):
         class_path = _qualname(class_path, skip_register=True)
