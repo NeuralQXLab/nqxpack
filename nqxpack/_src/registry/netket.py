@@ -16,6 +16,7 @@ from flax import serialization
 from netket.graph import Lattice
 from netket.utils.version_check import module_version
 
+
 def serialize_Lattice(g):
     return {
         "basis_vectors": g.basis_vectors,
