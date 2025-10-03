@@ -62,7 +62,7 @@ def register_serialization(
         @wraps(serialization_fun)
         def _serialize_fun(obj):
             dict_data = serialization_fun(obj)
-            assert isinstance(dict_data, dict)
+            assert isinstance(dict_data, dict), f"found illegal type {type(dict_data)}"
 
             if "_target_" not in dict_data:
                 dict_data["_target_"] = _target_qualname

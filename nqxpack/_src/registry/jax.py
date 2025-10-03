@@ -16,16 +16,17 @@ register_closure_simple_serialization(
 
 
 def serialize_PyTreeDef(obj):
-    return {
-        "node_data": obj.node_data(),
-        "children": obj.children(),
-    }
+    # __getstate__ returns (registry, data). We only serialize the data part
+    # since we'll use the default_registry during deserialization
+    _registry, data = obj.__getstate__()
+    return {"data": data}
 
 
-def deserialize_PyTreeDef(obj):
-    return jax.tree_util.PyTreeDef.make_from_node_data_and_children(
-        jax.tree_util.default_registry, obj["node_data"], obj["children"]
-    )
+def deserialize_PyTreeDef(serialized):
+    obj = jax.tree_util.PyTreeDef.__new__(jax.tree_util.PyTreeDef)
+    # Reconstruct state using default_registry
+    obj.__setstate__((jax.tree_util.default_registry, serialized["data"]))
+    return obj
 
 
 register_serialization(
