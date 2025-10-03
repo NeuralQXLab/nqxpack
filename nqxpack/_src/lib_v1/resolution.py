@@ -21,9 +21,11 @@ def _register_package_version(module_name):
     try:
         version = importlib.metadata.version(package_name)
     except importlib.metadata.PackageNotFoundError:
-        print(
-            f"Package '{package_name}' is not installed, so you may not be able to reload this."
-        )
+        # Silently skip builtins and netket_pro since they don't have package metadata
+        if package_name not in ("builtins", "netket_pro"):
+            print(
+                f"Package '{package_name}' is not installed, so you may not be able to reload this."
+            )
         version = ""
 
     PACKAGE_VERSIONS[package_name] = version
