@@ -45,15 +45,14 @@ class AssetManager(ABC):
             path: Path to the asset, as a tuple of strings. This is optional.
         """
         if path is None:
-            path = current_context().raw_path
-        key = "/".join(path + (asset_name,))
+            path = current_context().path
+        key = f"{path}/{asset_name}"
         return self._write(key, value)
 
     def read_asset(self, asset_name, path: tuple[str, ...] = None):
         if path is None:
-            path = current_context().raw_path
-
-        key = "/".join(path + (asset_name,))
+            path = current_context().path
+        key = f"{path}/{asset_name}"
         return self._read(key)
 
     def write_msgpack(self, asset_name, value: dict, path: tuple[str, ...] = None):
