@@ -65,7 +65,7 @@ def serialize_SpinOrbitalFermions(hi):
     constraint = hi.constraint
     if hi.spin is None:
         data["n_fermions"] = hi.n_fermions
-    else:
+    elif any(s is not None for s in hi.n_fermions_per_spin):
         data["n_fermions_per_spin"] = hi.n_fermions_per_spin
 
     # Set the constraint as None for the default constraint
@@ -98,6 +98,24 @@ register_serialization(
     serialize_DoubledHilbert,
     deserialization_fun=deserialize_DoubledHilbert,
 )
+
+from netket.hilbert.tensor_hilbert import TensorHilbert
+from netket.hilbert.tensor_hilbert_discrete import TensorDiscreteHilbert
+
+
+def serialize_TensorHilbert(hi):
+    return {"_args_": hi._hilbert_spaces}
+
+
+register_serialization(
+    TensorHilbert,
+    serialize_TensorHilbert,
+)
+register_serialization(
+    TensorDiscreteHilbert,
+    serialize_TensorHilbert,
+)
+
 
 # Constraints
 from netket.hilbert.constraint import SumConstraint, SumOnPartitionConstraint
