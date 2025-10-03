@@ -15,25 +15,28 @@ from nqxpack._src.lib_v1.asset_lib import (
 from nqxpack._src.lib_v1.resolution import (
     _qualname,
 )
+from nqxpack._src.lib_v1.versioned_registry import (
+    VERSIONED_DESERIALIZATION_REGISTRY,
+)
 
 
 TYPE_SERIALIZATION_REGISTRY = {}
-TYPE_DESERIALIZATION_REGISTRY = {}
 
 
 T = TypeVar("T")
 PathT = tuple[str, ...]
 SerializationFun = Callable[[T, PathT, AssetManager], dict]
 ConversionFun = Callable[[T], Any]
-DeserializationFun = Callable[[dict, PathT, AssetManager], T]
+DeserializationFun = Callable[[dict], T]
 
 
 def register_serialization(
-    cls: T,
+    cls: type[T],
     serialization_fun: SerializationFun | ConversionFun,
-    deserialization_fun: DeserializationFun = None,
+    deserialization_fun: DeserializationFun | None = None,
     reconstruct_type: bool = True,
     override: bool = False,
+    min_version: tuple[int, int, int] = (0, 0, 0),
 ):
     """
     Register a custom serialization function and deserialization function for a given class.
@@ -52,6 +55,11 @@ def register_serialization(
             output can be any type handled by the serialisation library, and will not be reserialized. This
             can be used to serialize some types that you do not actually want to serialise, and convert them
             to default types.
+        min_version: Minimum package version (inclusive) that was used to save/serialize data in this format.
+            Default is (0, 0, 0). This indicates "data saved by package version >= min_version uses this format".
+            When loading, the deserialization function will be selected based on the version that was used to save,
+            not the current package version. The deserialization function will be registered in the versioned
+            registry with this min_version.
     """
     if reconstruct_type:
         if deserialization_fun is not None:
@@ -76,7 +84,11 @@ def register_serialization(
 
     TYPE_SERIALIZATION_REGISTRY[cls] = _serialize_fun
     if deserialization_fun is not None:
-        TYPE_DESERIALIZATION_REGISTRY[cls] = deserialization_fun
+        register_deserialization(
+            class_path=cls,
+            deserialization_fun=deserialization_fun,
+            min_version=min_version,
+        )
 
 
 def _simple_serialize(
@@ -105,6 +117,36 @@ def _simple_serialize(
         res[k] = _getattr(obj, v)
     res["_target_"] = _qualname(obj)
     return res
+
+
+def register_deserialization(
+    class_path: str | type,
+    deserialization_fun: DeserializationFun,
+    min_version: tuple[int, int, int] = (0, 0, 0),
+):
+    """
+    Register a deserialization function for a deprecated or older version of a class.
+
+    This function allows registering deserialization logic without a corresponding
+    serialization function, useful for maintaining backwards compatibility with
+    older serialized formats.
+
+    Args:
+        class_path: Either a fully qualified class path as a string (e.g., "package.module.OldClass")
+                   or a class object which will be converted to a class path.
+        deserialization_fun: Function that takes a dict and returns an instance
+        min_version: Minimum package version (inclusive) that was used to save/serialize data in this format.
+                    Default is (0, 0, 0). This indicates "data saved by package version >= min_version uses this deserializer".
+                    When loading, this deserializer will be selected based on the version that was used to save the data.
+    """
+    if not isinstance(class_path, str):
+        class_path = _qualname(class_path, skip_register=True)
+
+    VERSIONED_DESERIALIZATION_REGISTRY.register(
+        class_path=class_path,
+        deserialization_fun=deserialization_fun,
+        min_version=min_version,
+    )
 
 
 def register_automatic_serialization(
