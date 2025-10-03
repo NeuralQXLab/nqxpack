@@ -32,8 +32,7 @@ class PackingContext:
         # Parse package versions from metadata if they exist
         if "packages" in metadata:
             self._parsed_package_versions = {
-                pkg: parse_version(ver)
-                for pkg, ver in metadata["packages"].items()
+                pkg: parse_version(ver) for pkg, ver in metadata["packages"].items()
             }
         else:
             self._parsed_package_versions = {}

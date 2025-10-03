@@ -21,20 +21,19 @@ from nqxpack._src.lib_v1.versioned_registry import (
 
 
 TYPE_SERIALIZATION_REGISTRY = {}
-TYPE_DESERIALIZATION_REGISTRY = {}
 
 
 T = TypeVar("T")
 PathT = tuple[str, ...]
 SerializationFun = Callable[[T, PathT, AssetManager], dict]
 ConversionFun = Callable[[T], Any]
-DeserializationFun = Callable[[dict, PathT, AssetManager], T]
+DeserializationFun = Callable[[dict], T]
 
 
 def register_serialization(
-    cls: T,
+    cls: type[T],
     serialization_fun: SerializationFun | ConversionFun,
-    deserialization_fun: DeserializationFun = None,
+    deserialization_fun: DeserializationFun | None = None,
     reconstruct_type: bool = True,
     override: bool = False,
     min_version: tuple[int, int, int] = (0, 0, 0),
@@ -83,11 +82,8 @@ def register_serialization(
 
     TYPE_SERIALIZATION_REGISTRY[cls] = _serialize_fun
     if deserialization_fun is not None:
-        TYPE_DESERIALIZATION_REGISTRY[cls] = deserialization_fun
-        # Also register in versioned registry using the class path string
-        class_path = _qualname(cls, skip_register=True)
-        VERSIONED_DESERIALIZATION_REGISTRY.register(
-            class_path=class_path,
+        register_deserialization(
+            class_path=cls,
             deserialization_fun=deserialization_fun,
             min_version=min_version,
         )
@@ -122,7 +118,7 @@ def _simple_serialize(
 
 
 def register_deserialization(
-    class_path: str,
+    class_path: str | type,
     deserialization_fun: DeserializationFun,
     min_version: tuple[int, int, int] = (0, 0, 0),
 ):
@@ -134,11 +130,15 @@ def register_deserialization(
     older serialized formats.
 
     Args:
-        class_path: The fully qualified class path as a string (e.g., "package.module.OldClass")
+        class_path: Either a fully qualified class path as a string (e.g., "package.module.OldClass")
+                   or a class object which will be converted to a class path.
         deserialization_fun: Function that takes a dict and returns an instance
         min_version: Minimum package version (inclusive) for which this deserializer is valid.
                     Default is (0, 0, 0).
     """
+    if not isinstance(class_path, str):
+        class_path = _qualname(class_path, skip_register=True)
+
     VERSIONED_DESERIALIZATION_REGISTRY.register(
         class_path=class_path,
         deserialization_fun=deserialization_fun,
