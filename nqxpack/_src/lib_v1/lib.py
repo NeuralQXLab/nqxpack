@@ -203,13 +203,10 @@ def deserialize_custom_object(obj):
         target = _resolve_qualname(target_str)
 
         try:
-            if is_custom:
-                return TYPE_DESERIALIZATION_REGISTRY[target](obj)
-            else:
-                deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
-                    target, partial(default_deserialization, target)
-                )
-                return deserialization_fun(obj)
+            deserialization_fun = TYPE_DESERIALIZATION_REGISTRY.get(
+                target, partial(default_deserialization, target)
+            )
+            return deserialization_fun(obj)
         except Exception as err:
             global_path = current_context().path
             raise RuntimeError(
