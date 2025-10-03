@@ -15,8 +15,6 @@ from flax import serialization
 # Graph
 from netket.graph import Lattice
 from netket.utils.version_check import module_version
-from netket.sampler import rules
-from netket_pro.sampler import rules as nkp_rules 
 
 def serialize_Lattice(g):
     return {
@@ -135,12 +133,10 @@ from netket.sampler.rules import (
     MultipleRules,
     TensorRule,
 )
-#if hasattr(rules, "GlobalSpinFlipRule"):
-#    from netket.sampler.rules import GlobalSpinFlipRule
-#    register_automatic_serialization(GlobalSpinFlipRule)
-if hasattr(nkp_rules, "GlobalSpinFlipRule"):
-    from netket_pro.sampler.rules import GlobalSpinFlipRule
-    register_automatic_serialization(GlobalSpinFlipRule)
+from netket.sampler import rules as sampler_rules
+
+if hasattr(sampler_rules, "GlobalSpinFlipRule"):
+    register_automatic_serialization(sampler_rules.GlobalSpinFlipRule)
 
 register_automatic_serialization(FixedRule)
 register_automatic_serialization(LocalRule)
