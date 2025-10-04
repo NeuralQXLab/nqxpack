@@ -1,6 +1,6 @@
 [project]
 name = "nqxpack"
-version = "0.1.2"
+version = "0.1.7"
 description = "Library to serialise objects arising from scientific and Machine Learning libraries, including NetKet."
 readme = "README.md"
 authors = [{ name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }]
