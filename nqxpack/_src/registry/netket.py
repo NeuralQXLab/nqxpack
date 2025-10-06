@@ -152,7 +152,7 @@ from netket.sampler.rules import (
     MultipleRules,
     TensorRule,
 )
-from netket.sampler import rules as sampler_rules
+from netket_pro.sampler import rules as sampler_rules
 
 if hasattr(sampler_rules, "GlobalSpinFlipRule"):
     register_automatic_serialization(sampler_rules.GlobalSpinFlipRule)
