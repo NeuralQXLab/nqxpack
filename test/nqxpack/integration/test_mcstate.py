@@ -56,7 +56,6 @@ def test_save_mcstate(model, tmpdir):
 
     distributed.barrier("barrier 1")
     nqxpack.save(vs, tmpdir / "mcstate.mpack")
-    nqxpack.save(vs, "mcstate.mpack")
     distributed.barrier("barrier 2")
 
     new_vs = nqxpack.load(tmpdir / "mcstate.mpack")
