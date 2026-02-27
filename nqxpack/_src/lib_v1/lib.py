@@ -2,7 +2,7 @@ from types import FunctionType
 from functools import partial
 
 # needed to support parametric classes
-from plum.parametric import type_unparametrized
+from plum import type_unparametrized
 
 import numpy as np
 
