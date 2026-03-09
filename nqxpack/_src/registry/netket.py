@@ -240,11 +240,35 @@ def _replicate(x):
 
 
 # For model states using frameworks that
+def _sort_numeric_string_keys(d):
+    """Recursively sort dicts with numeric string keys into lists to restore
+    the original structure that ``to_state_dict`` converted from lists to dicts.
+
+    ``flax.serialization.to_state_dict`` converts lists to dicts with string
+    keys (e.g. ``{'0': a, '1': b, ...}``).  When the number of entries >= 10,
+    alphabetical iteration order (``'0','1','10','11',...,'2',...``) no longer
+    matches the original numerical order, causing ``jax.tree.flatten`` to
+    return leaves in the wrong order.  This helper restores the list form so
+    that ``jax.tree.flatten`` produces leaves in the correct order.
+    """
+    if isinstance(d, dict):
+        d = {k: _sort_numeric_string_keys(v) for k, v in d.items()}
+        # If all keys are non-negative integer strings, convert to a list
+        # sorted by the numeric value.
+        if d and all(k.isdigit() for k in d.keys()):
+            sorted_items = sorted(d.items(), key=lambda kv: int(kv[0]))
+            return [v for _, v in sorted_items]
+    elif isinstance(d, (list, tuple)):
+        return type(d)(_sort_numeric_string_keys(v) for v in d)
+    return d
+
+
 def _unpack_variables(state_dict, obj):
     if "variables_structure" in obj:
-        variables_flat, _ = jax.tree.flatten(state_dict["variables"])
+        variables_sd = _sort_numeric_string_keys(state_dict["variables"])
+        variables_flat, _ = jax.tree.flatten(variables_sd)
         variables = jax.tree.unflatten(obj["variables_structure"], variables_flat)
-        del obj["variables_structure"], variables_flat
+        del obj["variables_structure"]
     else:
         variables = state_dict["variables"]
     return variables
