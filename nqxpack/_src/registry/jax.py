@@ -26,15 +26,24 @@ def serialize_PyTreeDef(obj):
 
 
 def deserialize_PyTreeDef(obj):
-    # Fall back to old method if available (for older JAX versions)
+    # JAX >= 0.9: from_node_data_and_children replaced make_from_node_data_and_children
+    if hasattr(jax.tree_util.PyTreeDef, "from_node_data_and_children"):
+        return jax.tree_util.PyTreeDef.from_node_data_and_children(
+            jax.tree_util.default_registry, obj["node_data"], obj["children"]
+        )
+    # Older JAX (< 0.9): make_from_node_data_and_children
     if hasattr(jax.tree_util.PyTreeDef, "make_from_node_data_and_children"):
         return jax.tree_util.PyTreeDef.make_from_node_data_and_children(
             jax.tree_util.default_registry, obj["node_data"], obj["children"]
         )
 
-    # Workaround for new JAX versions with old serialized data
-    # We need to reconstruct the PyTreeDef from node_data and children
-    return _reconstruct_pytreedef_from_legacy(obj)
+    raise RuntimeError(
+        f"Cannot deserialize PyTreeDef: JAX {jax.__version__} has neither "
+        "`PyTreeDef.from_node_data_and_children` (JAX >= 0.9) nor "
+        "`PyTreeDef.make_from_node_data_and_children` (JAX < 0.9). "
+        "Please open an issue at https://github.com/netket/netket_pro reporting "
+        "your JAX version so that support can be added."
+    )
 
 
 def _reconstruct_pytreedef_from_legacy(obj):
@@ -61,9 +70,7 @@ def _reconstruct_pytreedef_from_legacy(obj):
     for child in children:
         if isinstance(child, dict) and "node_data" in child and "children" in child:
             # This is a serialized PyTreeDef that needs reconstruction
-            child_treedef = _reconstruct_pytreedef_from_legacy(
-                child["node_data"], child["children"]
-            )
+            child_treedef = _reconstruct_pytreedef_from_legacy(child)
             reconstructed_children.append(child_treedef)
         else:
             # This is already a PyTreeDef
