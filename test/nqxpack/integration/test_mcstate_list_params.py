@@ -16,7 +16,6 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 
-import pytest
 
 import nqxpack
 from nqxpack._src import distributed
