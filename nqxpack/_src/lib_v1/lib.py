@@ -60,17 +60,12 @@ def serialize_object(obj):
         if len(obj) == 0:
             return {"_target_": "builtins.tuple"}
         else:
+            # Use serialize_object for the nested list so that path traversal
+            # during serialization matches deserialization (autopath skips 0
+            # because `if path:` is falsy for 0, so item i gets path "_args_/i").
             return {
                 "_target_": "builtins.tuple",
-                "_args_": [
-                    [
-                        serialize_object(
-                            x,
-                            path=("_args_", i),
-                        )
-                        for i, x in enumerate(obj)
-                    ],
-                ],
+                "_args_": serialize_object([list(obj)], path="_args_"),
             }
     elif isinstance(obj, dict):
         # It's rare (though it happnens, for example in nnx.NodeMapping) but some dicts
