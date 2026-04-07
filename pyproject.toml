@@ -28,6 +28,14 @@ dev = [
     "numpy>=2",
     "omegaconf>=2",
 ]
+docs = [
+    "neuralqxlab-sphinx-theme",
+    "sphinx-autobuild>=2024.0",
+    "sphinx-book-theme>=1.2.0",
+]
+
+[tool.uv.sources]
+neuralqxlab-sphinx-theme = { path = "../neuralqxlab-sphinx-theme", editable = true }
 
 # Development tools
 [tool.black]

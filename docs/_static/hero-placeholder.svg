@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0d0d1a"/>
+    </radialGradient>
+    <radialGradient id="glow1" cx="40%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#4f8ef7" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#4f8ef7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="65%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="480" height="360" fill="url(#bg)" rx="12"/>
+
+  <!-- Glow blobs -->
+  <ellipse cx="180" cy="200" rx="150" ry="130" fill="url(#glow1)"/>
+  <ellipse cx="320" cy="160" rx="130" ry="110" fill="url(#glow2)"/>
+
+  <!-- Stack of archive boxes (bottom to top) -->
+
+  <!-- Box 3 (back) -->
+  <rect x="155" y="210" width="170" height="50" rx="6"
+        fill="#1e2a45" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.4"/>
+  <rect x="155" y="210" width="170" height="14" rx="6"
+        fill="#243052" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.4"/>
+  <!-- clasp -->
+  <rect x="226" y="206" width="28" height="8" rx="3"
+        fill="#4f8ef7" fill-opacity="0.25" stroke="#4f8ef7" stroke-width="1" stroke-opacity="0.5"/>
+
+  <!-- Box 2 (middle) -->
+  <rect x="140" y="158" width="170" height="50" rx="6"
+        fill="#1e2a45" stroke="#a855f7" stroke-width="1" stroke-opacity="0.5"/>
+  <rect x="140" y="158" width="170" height="14" rx="6"
+        fill="#2a2045" stroke="#a855f7" stroke-width="1" stroke-opacity="0.5"/>
+  <rect x="211" y="154" width="28" height="8" rx="3"
+        fill="#a855f7" fill-opacity="0.25" stroke="#a855f7" stroke-width="1" stroke-opacity="0.6"/>
+  <!-- label line -->
+  <rect x="158" y="177" width="60" height="4" rx="2" fill="#a855f7" fill-opacity="0.35"/>
+  <rect x="158" y="185" width="40" height="4" rx="2" fill="#a855f7" fill-opacity="0.2"/>
+
+  <!-- Box 1 (front / active) -->
+  <rect x="125" y="105" width="170" height="50" rx="6"
+        fill="#1e2a45" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity="0.8"/>
+  <rect x="125" y="105" width="170" height="14" rx="6"
+        fill="#1a2f5a" stroke="#4f8ef7" stroke-width="1.5" stroke-opacity="0.8"/>
+  <rect x="196" y="101" width="28" height="8" rx="3"
+        fill="#4f8ef7" fill-opacity="0.4" stroke="#4f8ef7" stroke-width="1.2"/>
+  <!-- label lines -->
+  <rect x="143" y="124" width="70" height="4" rx="2" fill="#4f8ef7" fill-opacity="0.5"/>
+  <rect x="143" y="132" width="50" height="4" rx="2" fill="#4f8ef7" fill-opacity="0.3"/>
+  <!-- active glow border -->
+  <rect x="125" y="105" width="170" height="50" rx="6"
+        fill="none" stroke="#4f8ef7" stroke-width="2" stroke-opacity="0.2"/>
+
+  <!-- Floating data tokens (zip arrows) -->
+  <g fill="none" stroke-width="1.5" stroke-linecap="round">
+    <line x1="340" y1="135" x2="340" y2="85" stroke="#4f8ef7" stroke-opacity="0.5"/>
+    <polyline points="333,93 340,84 347,93" stroke="#4f8ef7" stroke-opacity="0.5"/>
+
+    <line x1="365" y1="175" x2="365" y2="225" stroke="#a855f7" stroke-opacity="0.45"/>
+    <polyline points="358,217 365,226 372,217" stroke="#a855f7" stroke-opacity="0.45"/>
+  </g>
+
+  <!-- Small floating object labels -->
+  <rect x="320" y="68" width="40" height="12" rx="3"
+        fill="#4f8ef7" fill-opacity="0.15" stroke="#4f8ef7" stroke-opacity="0.4" stroke-width="1"/>
+  <rect x="346" y="228" width="40" height="12" rx="3"
+        fill="#a855f7" fill-opacity="0.15" stroke="#a855f7" stroke-opacity="0.4" stroke-width="1"/>
+
+  <!-- Corner accent dots -->
+  <circle cx="80" cy="80"   r="3" fill="#4f8ef7" fill-opacity="0.4"/>
+  <circle cx="400" cy="290" r="3" fill="#a855f7" fill-opacity="0.4"/>
+  <circle cx="90" cy="290"  r="2" fill="#4f8ef7" fill-opacity="0.25"/>
+  <circle cx="395" cy="75"  r="2" fill="#a855f7" fill-opacity="0.25"/>
+</svg>
