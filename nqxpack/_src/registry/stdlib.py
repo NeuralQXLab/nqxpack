@@ -1,5 +1,4 @@
 from functools import partial
-import io
 import numpy as np
 
 from nqxpack._src.lib_v1.custom_types import (
