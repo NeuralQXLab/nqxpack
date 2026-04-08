@@ -4,6 +4,7 @@ from functools import partial
 # needed to support parametric classes
 from plum import type_unparametrized
 
+import jax
 import numpy as np
 
 import dataclasses
@@ -24,6 +25,7 @@ from nqxpack._src.lib_v1.closure import (
     CLOSURE_SERIALIZATION_REGISTRY,
 )
 from nqxpack._src.errors import (
+    JaxArraySerializationError,
     SerializationError,
 )
 from nqxpack._src.contextmgr import autopath, current_context
@@ -87,6 +89,9 @@ def serialize_object(obj):
     # I don't think this is needed, as it's handled by serializing the type itself.
     # elif any(obj is t for t in NUMERIC_TYPES):
     #    return np.dtype(obj).name
+    elif isinstance(obj, jax.Array):
+        global_path = current_context().path
+        raise JaxArraySerializationError(obj, path=global_path)
     elif isinstance(obj, np.dtype):
         return obj.name
     elif isinstance(obj, type):

@@ -41,6 +41,32 @@ class SerializationError(Exception):
         )
 
 
+class JaxArraySerializationError(SerializationError):
+    def __init__(self, obj, path):
+        path = path or "<root>"
+        shape = getattr(obj, "shape", None)
+        dtype = getattr(obj, "dtype", None)
+
+        Exception.__init__(
+            self,
+            f"""
+            Impossible to serialize a JAX array found at path
+            `{path}`.
+
+            nqxpack only supports NumPy arrays. Convert this array, or the pytree
+            containing it, to NumPy before calling `nqxpack.save`.
+
+            For example:
+                array_np = np.asarray(array)
+                pytree_np = jax.tree.map(np.asarray, pytree)
+
+            Array details:
+                shape: {shape}
+                dtype: {dtype}
+            """,
+        )
+
+
 class FutureVersionError(Exception):
     def __init__(self, file_version, max_version):
         super().__init__(
