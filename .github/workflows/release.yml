@@ -89,6 +89,8 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
 
       - name: Create GitHub release
         env:
@@ -96,6 +98,13 @@ jobs:
           NEW_TAG: v${{ needs.bump-version.outputs.new_version }}
           OLD_TAG: v${{ needs.bump-version.outputs.old_version }}
         run: |
-          gh release create "$NEW_TAG" dist/* \
-            --title "$NEW_TAG" \
-            --notes "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$OLD_TAG...$NEW_TAG"
+          NOTES="**Full Changelog**: https://github.com/${{ github.repository }}/compare/$OLD_TAG...$NEW_TAG"
+
+          if gh release view "$NEW_TAG" >/dev/null 2>&1; then
+            gh release upload "$NEW_TAG" dist/* --clobber
+            gh release edit "$NEW_TAG" --title "$NEW_TAG" --notes "$NOTES"
+          else
+            gh release create "$NEW_TAG" dist/* \
+              --title "$NEW_TAG" \
+              --notes "$NOTES"
+          fi
