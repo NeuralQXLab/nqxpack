@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      old_version: ${{ steps.old-version.outputs.version }}
+      new_version: ${{ steps.new-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +30,17 @@ jobs:
 
       - run: pip install bump-my-version
 
+      - name: Read current version
+        id: old-version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+          from pathlib import Path
+
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          print(f"version={data['project']['version']}")
+          PY
+
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"
@@ -35,5 +49,53 @@ jobs:
       - name: Bump version
         run: bump-my-version bump ${{ inputs.bump }}
 
+      - name: Read bumped version
+        id: new-version
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+          from pathlib import Path
+
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          print(f"version={data['project']['version']}")
+          PY
+
       - name: Push commit and tag
         run: git push --follow-tags
+
+  publish:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/nqxpack
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.bump-version.outputs.new_version }}
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_TAG: v${{ needs.bump-version.outputs.new_version }}
+          OLD_TAG: v${{ needs.bump-version.outputs.old_version }}
+        run: |
+          gh release create "$NEW_TAG" dist/* \
+            --title "$NEW_TAG" \
+            --notes "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$OLD_TAG...$NEW_TAG"
