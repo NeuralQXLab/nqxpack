@@ -7,15 +7,28 @@ Shared defaults (theme, extensions, intersphinx, napoleon settings) come from
 build instructions.
 """
 
+from importlib.metadata import PackageNotFoundError, version as package_version
 from pathlib import Path
+import tomllib
 
 from neuralqxlab_sphinx_theme.conf_base import *  # noqa: F401, F403
 from neuralqxlab_sphinx_theme.linkcode import make_linkcode_resolve
 
+
+def _project_version() -> str:
+    try:
+        return package_version("nqxpack")
+    except PackageNotFoundError:
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        data = tomllib.loads(pyproject.read_text())
+        return data["project"]["version"]
+
+
 project = "nqxpack"
 copyright = "2024, NeuralQXLab"
 author = "NeuralQXLab"
-release = "0.1.8"
+release = _project_version()
+version = ".".join(release.split(".")[:2])
 
 html_context = {
     **html_context,  # noqa: F405
