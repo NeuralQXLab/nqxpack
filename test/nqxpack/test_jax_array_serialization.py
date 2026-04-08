@@ -19,7 +19,9 @@ def test_save_raises_targeted_error_for_jax_arrays(tmp_path):
     variables = model.init(jax.random.key(0), jnp.ones((1, 4)))
 
     with pytest.raises(JaxArraySerializationError) as excinfo:
-        nqxpack.save({"model": model, "variables": variables}, tmp_path / "checkpoint.nk")
+        nqxpack.save(
+            {"model": model, "variables": variables}, tmp_path / "checkpoint.nk"
+        )
 
     msg = str(excinfo.value)
 
