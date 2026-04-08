@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/_static/logo-transparent.png" alt="nqxpack" width="420">
+</p>
+
 # NQXPack
 
 A library to save and load objects coming from Scientific Machine Learning libraries, with a special attention to Neural Quantum States from NetKet.
