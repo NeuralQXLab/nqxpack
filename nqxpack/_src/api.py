@@ -16,6 +16,7 @@ from nqxpack._src.io import DirectoryArchive, ZipArchive
 from nqxpack._src.errors import FutureVersionError
 from nqxpack._src.lib_v1 import VERSION as LIB_VERSION
 from nqxpack._src.registry import VERSION as REGISTRY_VERSION
+from nqxpack._src.registry._loader import load_all_available
 from nqxpack._src.metadata.generate_metadata import VERSION as METADATA_VERSION
 
 _CONFIG_FILENAME = "object.json"
@@ -66,6 +67,8 @@ def save(object, path, *, zip: bool = True):
         path: The path to save the object to. If the path does not have a .nk extension, it will be added.
         zip: If True (default), the object will be saved in a zip file. If False, it will be saved in a directory.
     """
+    load_all_available()
+
     if not isinstance(path, Path):
         path = Path(path)
 
@@ -107,6 +110,8 @@ def load(path):
         path: The path to save the object to. If the path does not have a .nk extension, it will be added.
         zip: If True (default), the object will be saved in a zip file. If False, it will be saved in a directory.
     """
+
+    load_all_available()
 
     if not isinstance(path, Path):
         path = Path(path)

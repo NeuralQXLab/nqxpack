@@ -1,11 +1,5 @@
-from nqxpack._src.registry import stdlib
-
-from nqxpack._src.registry import jax
-from nqxpack._src.registry import flax
-
-from nqxpack._src.registry import hydra
-
-from nqxpack._src.registry import netket
-from nqxpack._src.registry import netket_operator
-
 from nqxpack._src.registry.versioninfo import VERSION
+from nqxpack._src.registry._loader import load_all_available
+
+# stdlib has no external dependencies — always load it at import time.
+from nqxpack._src.registry import stdlib  # noqa: F401

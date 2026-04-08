@@ -1,5 +1,7 @@
 from functools import partial
+import io
 
+import numpy as np
 
 # flake8: noqa: E402
 from nqxpack._src.lib_v1.custom_types import (
@@ -356,4 +358,29 @@ def serialize_fullsumstate(state: FullSumState, *, mixed_state: bool = False) ->
 
 register_serialization(
     FullSumState, serialize_fullsumstate, partial(deserialize_vstate, FullSumState)
+)
+
+
+# HashableArray
+from netket.utils import HashableArray
+
+
+def serialize_hashable_array(obj):
+    asset_manager = current_context().asset_manager
+    buffer = io.BytesIO()
+    np.save(buffer, np.asarray(obj))
+    asset_manager.write_asset("array.npy", buffer.getvalue())
+    return {}
+
+
+def deserialize_hashable_array(obj):
+    asset_manager = current_context().asset_manager
+    array = np.load(io.BytesIO(asset_manager.read_asset("array.npy")))
+    return HashableArray(array)
+
+
+register_serialization(
+    HashableArray,
+    serialization_fun=serialize_hashable_array,
+    deserialization_fun=deserialize_hashable_array,
 )
