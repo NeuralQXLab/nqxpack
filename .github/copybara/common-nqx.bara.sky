@@ -20,7 +20,9 @@ copybara_transforms = [
     # core.move("test/nqxpack", "test/nqxpack"),
     # core.move("test/common", "test/common"),
     core.move("design/nqxpack", "design"),
-    # core.move("docs/packages/nqxpack", "docs/nqxpack"),
+    # Docs content is synced; build config (conf.py, Makefile, _static/, etc.)
+    # is excluded via DESTINATION_EXCLUDE so each repo keeps its own setup.
+    core.move("docs/packages/nqxpack", "docs"),
 ]
 
 os_config = {
@@ -43,9 +45,17 @@ os_config = {
         "test/nqxpack/**",
         "design/**",
         "examples/**",
-        "docs/nqxpack/**",
+        "docs/**",
     ] + destination_common,
     "DESTINATION_EXCLUDE": [
-        "**/_version.py"
+        "**/_version.py",
+        # Docs build config — managed independently per repo, never synced.
+        "docs/conf.py",
+        "docs/Makefile",
+        "docs/requirements.txt",
+        "docs/_static/**",
+        "docs/README.md",
+        "docs/api/generated/**",
+        "docs/_build/**",
     ]
 }
