@@ -44,12 +44,13 @@ def save(object, path, *, zip: bool = True):
         In general, we recomend to use the same version of the libraries that were used to save the file.
 
     The NQXPack format is a zip file that contains the following files:
+
     - metadata.json: Contains metadata about the file, including the format version and the versions of the
-        libraries used to save the file.
+      libraries used to save the file.
     - object.json: A json file, in a format similar to Hydra's, that contains the information necessary to
-        reconstruct the object.
+      reconstruct the object.
     - assets/: A directory containing any object that cannot easily be serialized to json. This will generally
-        contain large objects, like numpy arrays, stored into a binary blob.
+      contain large objects, like numpy arrays, stored into a binary blob.
 
     .. warning::
 
