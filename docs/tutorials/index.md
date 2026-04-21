@@ -6,4 +6,5 @@
 
 base
 custom_serialization
+plugin_registry
 ```
