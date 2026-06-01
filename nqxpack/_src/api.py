@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import jax
+from jax.experimental import multihost_utils
 
 from nqxpack._src.lib_v1 import (
     serialize_object,
@@ -100,6 +101,11 @@ def save(object, path, *, zip: bool = True):
             if jax.process_index() == 0:
                 with archive.open(_METADATA_FILENAME, "w") as f:
                     f.write(orjson.dumps(metadata_json, option=orjson_options))
+
+    # The archive is written by the main process only; wait so the file is
+    # complete on disk before any process proceeds (e.g. to load it).
+    if jax.process_count() > 1:
+        multihost_utils.sync_global_devices("nqxpack.save")
 
 
 def load(path):
