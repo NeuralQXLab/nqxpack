@@ -7,6 +7,7 @@ import numpy as np
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
     register_automatic_serialization,
+    has_custom_serializer,
 )
 from nqxpack._src.lib_v1.options import SaveOption
 from nqxpack._src.contextmgr import current_context
@@ -279,6 +280,40 @@ def _unpack_variables(state_dict, obj):
     return variables
 
 
+def _serialize_model_field(state):
+    """Choose what to serialize for a variational state's model.
+
+    By default we write ``state._model`` (the framework-native static model: a
+    flax module, an nnx graphdef wrapper, an equinox static partition, ...),
+    exactly as before.
+
+    However, some frameworks wrap the user's model into an opaque static
+    container (``flax.nnx`` -> graphdef, ``equinox`` -> static partition) that
+    hides the original class. If a custom serializer has been registered for
+    that original class, we instead serialize ``state.model`` -- the *unwrapped*
+    model -- so that the registered serializer fires. This lets packages provide
+    a relocatable serialization (e.g. bundling source/config) for their models
+    even when netket would otherwise store a graphdef referencing the class by
+    import path.
+
+    Models whose concrete class has no registered serializer are completely
+    unaffected: the check is on the class (no unwrap is triggered) and the
+    returned object is ``state._model`` as before.
+    """
+    framework = getattr(state, "_model_framework", None)
+    static_model = state._model
+    if framework is not None:
+        concrete_cls = framework.wrapped_model_class(static_model)
+    else:
+        concrete_cls = type(static_model)
+
+    if has_custom_serializer(concrete_cls):
+        # unwrap (e.g. nnx.merge / eqx.combine) so the registered serializer for
+        # `concrete_cls` is dispatched on the real model instance.
+        return state.model
+    return static_model
+
+
 def serialize_mcstate(
     state: MCState,
 ) -> dict:
@@ -305,7 +340,7 @@ def serialize_mcstate(
 
     return {
         "sampler": state.sampler,
-        "model": state._model,  # write the bare model
+        "model": _serialize_model_field(state),  # bare model (or relocatable export)
         "variables_structure": variables_structure,
     }
 
@@ -359,7 +394,7 @@ def serialize_mcmixedstate(state: MCMixedState) -> dict:
     return {
         "sampler": state.sampler,
         "sampler_diag": state.diagonal.sampler,
-        "model": state._model,  # write the bare model
+        "model": _serialize_model_field(state),  # bare model (or relocatable export)
     }
 
 
@@ -390,7 +425,7 @@ def serialize_fullsumstate(state: FullSumState, *, mixed_state: bool = False) ->
 
     return {
         "hilbert": hilbert,
-        "model": state._model,  # write the bare model
+        "model": _serialize_model_field(state),  # bare model (or relocatable export)
     }
 
 

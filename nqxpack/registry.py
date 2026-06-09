@@ -2,6 +2,7 @@ __all__ = [
     "register_serialization",
     "register_automatic_serialization",
     "register_closure_simple_serialization",
+    "has_custom_serializer",
     "AssetManager",
     "SaveOption",
     "LoadOption",
@@ -11,6 +12,7 @@ __all__ = [
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization as register_serialization,
     register_automatic_serialization as register_automatic_serialization,
+    has_custom_serializer as has_custom_serializer,
 )
 from nqxpack._src.lib_v1.closure import (
     register_closure_simple_serialization as register_closure_simple_serialization,

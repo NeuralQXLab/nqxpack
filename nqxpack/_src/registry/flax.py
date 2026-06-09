@@ -25,7 +25,15 @@ if flax_version >= (0, 10, 4):
     register_automatic_serialization(IndexesPytreeDef, *IndexesPytreeDef._fields)
 
 # Sequence
-register_automatic_serialization(nnx.Sequential, _args_="layers")
+def serialize_sequential(seq: nnx.Sequential) -> dict:
+    # ``seq.layers`` is an ``nnx.List``, which has no serializer of its own and
+    # would otherwise be written as an empty container (dropping every layer).
+    # Materialise it as a plain Python list so each layer is serialized
+    # individually at its own path; ``nnx.Sequential(*layers)`` reconstructs it.
+    return {"_args_": list(seq.layers)}
+
+
+register_serialization(nnx.Sequential, serialize_sequential)
 
 
 def serialize_linear(
@@ -37,6 +45,10 @@ def serialize_linear(
 
     asset_manager.write_msgpack("state.msgpack", state_dict)
 
+    # NOTE: ``kernel_init`` / ``bias_init`` are intentionally not serialized.
+    # They only seed the initial weights, which are immediately overwritten by
+    # the state restored below, so they are irrelevant to round-trip fidelity --
+    # and recent flax (>= 0.12) no longer retains them as instance attributes.
     return {
         "in_features": layer.in_features,
         "out_features": layer.out_features,
@@ -44,8 +56,6 @@ def serialize_linear(
         "dtype": layer.dtype,
         "param_dtype": layer.param_dtype,
         "precision": layer.precision,
-        "kernel_init": layer.kernel_init,
-        "bias_init": layer.bias_init,
         "dot_general": layer.dot_general,
         "promote_dtype": layer.promote_dtype,
         # "preferred_element_type": layer.preferred_element_type,
@@ -62,8 +72,6 @@ def deserialize_linear(obj: dict) -> nnx.Linear:
         dtype=obj.get("dtype", jax.numpy.float32),
         param_dtype=obj.get("param_dtype", jax.numpy.float32),
         precision=obj.get("precision", None),
-        kernel_init=obj.get("kernel_init", nnx.initializers.lecun_normal()),
-        bias_init=obj.get("bias_init", nnx.initializers.zeros),
         dot_general=obj.get("dot_general", None),
         promote_dtype=obj.get("promote_dtype", False),
         # preferred_element_type=obj.get("preferred_element_type", None),

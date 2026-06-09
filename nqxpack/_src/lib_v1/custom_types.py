@@ -7,6 +7,7 @@ from functools import partial, wraps
 import numpy as np
 from typing import TypeVar
 import jax.numpy as jnp
+from plum import type_unparametrized
 
 
 from nqxpack._src.lib_v1.asset_lib import (
@@ -47,6 +48,29 @@ PathT = tuple[str, ...]
 SerializationFun = Callable[[T, PathT, AssetManager], dict]
 ConversionFun = Callable[[T], Any]
 DeserializationFun = Callable[[dict], T]
+
+
+def has_custom_serializer(obj_or_cls) -> bool:
+    """Whether serializing this object dispatches to a custom serializer.
+
+    Returns ``True`` if serializing ``obj_or_cls`` would be handled by a
+    user-provided serializer -- either a ``__to_json__`` method or a function
+    registered via :func:`register_serialization` -- rather than falling through
+    to the default handling (dataclass / closure / qualified-name fallback).
+
+    Accepts either an instance or a class. This mirrors the dispatch decision
+    made in ``serialize_custom_object`` so callers do not need to reach into the
+    internal registry. Use it, for example, to decide whether a framework-wrapped
+    model should be unwrapped so that a serializer registered for its concrete
+    class can fire.
+    """
+    if hasattr(obj_or_cls, "__to_json__"):
+        return True
+    if isinstance(obj_or_cls, type):
+        cls = obj_or_cls
+    else:
+        cls = type_unparametrized(obj_or_cls)
+    return cls in TYPE_SERIALIZATION_REGISTRY
 
 
 def register_serialization(
