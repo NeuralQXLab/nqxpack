@@ -35,6 +35,24 @@ class AssetManager(ABC):
         """
         pass
 
+    @abstractmethod
+    def _has(self, key: str) -> bool:
+        """
+        Returns whether a binary blob exists under the resolved key `key`.
+
+        This should be implemented for the specific asset manager.
+        """
+        pass
+
+    def _resolve_key(self, key: str) -> str:
+        """Map a logical ``path/asset_name`` key to the backend storage key.
+
+        The default is the identity; backends that strip a ``remove_root`` or
+        prepend a ``path`` prefix override this so that ``_write``/``_read``/
+        ``_has`` all agree on the same resolved key.
+        """
+        return key
+
     def write_asset(self, asset_name, value: bytes, path: tuple[str, ...] = None):
         """
         Write an asset to the backend
@@ -46,14 +64,28 @@ class AssetManager(ABC):
         """
         if path is None:
             path = current_context().path
-        key = f"{path}/{asset_name}"
-        return self._write(key, value)
+        return self._write(self._resolve_key(f"{path}/{asset_name}"), value)
 
     def read_asset(self, asset_name, path: tuple[str, ...] = None):
         if path is None:
             path = current_context().path
-        key = f"{path}/{asset_name}"
-        return self._read(key)
+        return self._read(self._resolve_key(f"{path}/{asset_name}"))
+
+    def has_asset(self, asset_name, path: tuple[str, ...] = None) -> bool:
+        """
+        Returns whether an asset exists in the backend.
+
+        Lets a deserializer branch on the presence of an optional, self-describing
+        payload (e.g. one written only when a save-time option was set) instead of
+        reading back a persisted flag.
+
+        Args:
+            asset_name: Name of the asset
+            path: Path to the asset, as a tuple of strings. This is optional.
+        """
+        if path is None:
+            path = current_context().path
+        return self._has(self._resolve_key(f"{path}/{asset_name}"))
 
     def write_msgpack(self, asset_name, value: dict, path: tuple[str, ...] = None):
         """
@@ -93,6 +125,9 @@ class InMemoryAssetManager(AssetManager):
     def _read(self, key: str) -> bytes:
         return self._assets[key]
 
+    def _has(self, key: str) -> bool:
+        return key in self._assets
+
 
 class FolderAssetManager(AssetManager):
     def __init__(self, folder, path, remove_root=None):
@@ -109,13 +144,14 @@ class FolderAssetManager(AssetManager):
         self.path = path
         self.remove_root = remove_root
 
-    def _write(self, key: str, value: bytes):
-        if self.remove_root is not None:
-            if key.startswith(self.remove_root):
-                key = key[len(self.remove_root) :]
+    def _resolve_key(self, key: str) -> str:
+        if self.remove_root is not None and key.startswith(self.remove_root):
+            key = key[len(self.remove_root) :]
         if self.path is not None:
             key = self.path + key
+        return key
 
+    def _write(self, key: str, value: bytes):
         if jax.process_index() == 0:
             if not (self.folder / key).parent.exists():
                 (self.folder / key).parent.mkdir(parents=True)
@@ -123,14 +159,11 @@ class FolderAssetManager(AssetManager):
                 f.write(value)
 
     def _read(self, key: str) -> bytes:
-        if self.remove_root is not None:
-            if key.startswith(self.remove_root):
-                key = key[len(self.remove_root) :]
-        if self.path is not None:
-            key = self.path + key
-
         with open(self.folder / key, "rb") as f:
             return f.read()
+
+    def _has(self, key: str) -> bool:
+        return (self.folder / key).exists()
 
 
 class ArchiveAssetManager(AssetManager):
@@ -153,25 +186,24 @@ class ArchiveAssetManager(AssetManager):
         self.path = path
         self.remove_root = remove_root
 
-    def _write(self, key: str, value: bytes):
-        if self.remove_root is not None:
-            if key.startswith(self.remove_root):
-                key = key[len(self.remove_root) :]
+    def _resolve_key(self, key: str) -> str:
+        if self.remove_root is not None and key.startswith(self.remove_root):
+            key = key[len(self.remove_root) :]
         if self.path is not None:
             key = self.path + key
+        return key
+
+    def _write(self, key: str, value: bytes):
         if jax.process_index() == 0:
             with self.archive.open(key, "w") as f:
                 f.write(value)
 
     def _read(self, key: str) -> bytes:
-        if self.remove_root is not None:
-            if key.startswith(self.remove_root):
-                key = key[len(self.remove_root) :]
-        if self.path is not None:
-            key = self.path + key
-
         if key not in self.archive.namelist():
             raise FileNotFoundError(f"Asset {key} not found in archive.")
 
         with self.archive.open(key, "r") as f:
             return f.read()
+
+    def _has(self, key: str) -> bool:
+        return key in self.archive.namelist()
