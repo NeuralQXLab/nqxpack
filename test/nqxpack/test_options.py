@@ -97,14 +97,18 @@ def test_wrong_direction(tmp_path):
 @common.skipif_distributed
 def test_wrong_type(tmp_path):
     with pytest.raises(TypeError, match="expects bool"):
-        nqxpack.save(Widget(1), tmp_path / "w.nk", options={"test_include_extra": "yes"})
+        nqxpack.save(
+            Widget(1), tmp_path / "w.nk", options={"test_include_extra": "yes"}
+        )
 
 
 @common.skipif_distributed
 def test_unused_save_option_warns(tmp_path):
     # No Widget is saved, so no serializer reads the option this call.
     with pytest.warns(UserWarning, match="no serializer used it"):
-        nqxpack.save(np.arange(3), tmp_path / "x.nk", options={"test_include_extra": True})
+        nqxpack.save(
+            np.arange(3), tmp_path / "x.nk", options={"test_include_extra": True}
+        )
 
 
 @common.skipif_distributed
