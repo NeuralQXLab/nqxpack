@@ -11,6 +11,7 @@ from nqxpack._src.lib_v1 import (
     deserialize_object,
 )
 from nqxpack._src.contextmgr import PackingContext
+from nqxpack._src.lib_v1.options import _validate_options, _warn_unused
 from nqxpack._src.metadata.generate_metadata import generate_metadata
 
 from nqxpack._src.io import DirectoryArchive, ZipArchive
@@ -32,7 +33,7 @@ versioninfo_info = {
 }
 
 
-def save(object, path, *, zip: bool = True):
+def save(object, path, *, zip: bool = True, options: dict | None = None):
     """
     Saves an object to a file, using the NQXPack format.
 
@@ -68,8 +69,13 @@ def save(object, path, *, zip: bool = True):
         object: The object to save.
         path: The path to save the object to. If the path does not have a .nk extension, it will be added.
         zip: If True (default), the object will be saved in a zip file. If False, it will be saved in a directory.
+        options: A dict of per-call save options consumed by the serializers that run
+            underneath this call. Use :func:`nqxpack.list_options` to discover what is
+            tunable. Options are never written to the archive.
     """
     load_all_available()
+
+    options = _validate_options(options or {}, "save")
 
     if not isinstance(path, Path):
         path = Path(path)
@@ -87,7 +93,9 @@ def save(object, path, *, zip: bool = True):
     with archive:
         with PackingContext(
             asset_manager=archive.create_asset_manager(path="assets/"),
-        ):
+            options=options,
+            mode="save",
+        ) as ctx:
             object_json = serialize_object(object)
 
             if jax.process_index() == 0:
@@ -102,13 +110,15 @@ def save(object, path, *, zip: bool = True):
                 with archive.open(_METADATA_FILENAME, "w") as f:
                     f.write(orjson.dumps(metadata_json, option=orjson_options))
 
+            _warn_unused(ctx)
+
     # The archive is written by the main process only; wait so the file is
     # complete on disk before any process proceeds (e.g. to load it).
     if jax.process_count() > 1:
         multihost_utils.sync_global_devices("nqxpack.save")
 
 
-def load(path):
+def load(path, *, options: dict | None = None):
     """
     Loads an nqxpack file.
 
@@ -116,9 +126,15 @@ def load(path):
         object: The object to save.
         path: The path to save the object to. If the path does not have a .nk extension, it will be added.
         zip: If True (default), the object will be saved in a zip file. If False, it will be saved in a directory.
+        options: A dict of per-call load options consumed by the deserializers that run
+            underneath this call (e.g. policy flags authorizing a fallback). Use
+            :func:`nqxpack.list_options` to discover what is tunable. Options are never
+            read from the archive; they come from the caller every time.
     """
 
     load_all_available()
+
+    options = _validate_options(options or {}, "load")
 
     if not isinstance(path, Path):
         path = Path(path)
@@ -163,7 +179,12 @@ def load(path):
             asset_manager = archive.create_asset_manager(path="assets/")
 
         config = archive.read(_CONFIG_FILENAME)
-        with PackingContext(asset_manager=asset_manager, metadata=metadata):
+        with PackingContext(
+            asset_manager=asset_manager,
+            metadata=metadata,
+            options=options,
+            mode="load",
+        ):
 
             state_obj_dict = json.loads(config)
 

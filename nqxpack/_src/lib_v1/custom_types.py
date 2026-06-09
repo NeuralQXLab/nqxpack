@@ -18,6 +18,25 @@ from nqxpack._src.lib_v1.resolution import (
 from nqxpack._src.lib_v1.versioned_registry import (
     VERSIONED_DESERIALIZATION_REGISTRY,
 )
+from nqxpack._src.lib_v1.options import OptionSpec, register_option
+from nqxpack._src.contextmgr import current_context
+
+
+def _with_option_scope(fun, specs):
+    """Wrap ``fun`` so that ``specs`` are the option declarations in scope for its body.
+
+    When ``specs`` is empty the function is returned unchanged (no wrapper, no
+    overhead) -- only (de)serializers that declared options pay for a scope push.
+    """
+    if not specs:
+        return fun
+
+    @wraps(fun)
+    def scoped(obj):
+        with current_context()._option_scope(specs):
+            return fun(obj)
+
+    return scoped
 
 
 TYPE_SERIALIZATION_REGISTRY = {}
@@ -37,6 +56,8 @@ def register_serialization(
     reconstruct_type: bool = True,
     override: bool = False,
     min_version: tuple[int, int, int] = (0, 0, 0),
+    *,
+    options: list[OptionSpec] | None = None,
 ):
     """
     Register a custom serialization function and deserialization function for a given class.
@@ -60,7 +81,16 @@ def register_serialization(
             When loading, the deserialization function will be selected based on the version that was used to save,
             not the current package version. The deserialization function will be registered in the versioned
             registry with this min_version.
+        options: Per-call options accepted by this (de)serializer, declared with
+            :func:`~nqxpack.registry.SaveOption` / :func:`~nqxpack.registry.LoadOption`.
+            Save options are readable (via :func:`~nqxpack.registry.option`) inside
+            ``serialization_fun``, load options inside ``deserialization_fun``.
     """
+    save_specs = {s.name: s for s in (options or []) if s.direction == "save"}
+    load_specs = {s.name: s for s in (options or []) if s.direction == "load"}
+    for s in options or []:
+        register_option(s)
+
     if reconstruct_type:
         if deserialization_fun is not None:
             _target_qualname = "#" + _qualname(cls, skip_register=True)
@@ -79,6 +109,10 @@ def register_serialization(
     else:
         _serialize_fun = serialization_fun
 
+    # Resolve `option()` reads inside each body against this registration's
+    # declarations (no-op when nothing was declared).
+    _serialize_fun = _with_option_scope(_serialize_fun, save_specs)
+
     if cls in TYPE_SERIALIZATION_REGISTRY and not override:
         raise ValueError(f"Type {cls} is already registered for serialization")
 
@@ -86,7 +120,7 @@ def register_serialization(
     if deserialization_fun is not None:
         register_deserialization(
             class_path=cls,
-            deserialization_fun=deserialization_fun,
+            deserialization_fun=_with_option_scope(deserialization_fun, load_specs),
             min_version=min_version,
         )
 

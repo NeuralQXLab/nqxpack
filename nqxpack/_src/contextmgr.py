@@ -1,10 +1,12 @@
 from typing import TYPE_CHECKING
 
 import threading
+from contextlib import contextmanager
 from functools import wraps
 
 if TYPE_CHECKING:
     from nqxpack._src.lib_v1.asset_lib import AssetManager
+    from nqxpack._src.lib_v1.options import OptionSpec
 
 from nqxpack._src.version_utils import parse_version
 
@@ -19,7 +21,13 @@ if not hasattr(_local, "packages"):
 
 
 class PackingContext:
-    def __init__(self, asset_manager: "AssetManager | None" = None, metadata=None):
+    def __init__(
+        self,
+        asset_manager: "AssetManager | None" = None,
+        metadata=None,
+        options: dict | None = None,
+        mode: str = "save",
+    ):
         if metadata is None:
             metadata = {}
 
@@ -28,6 +36,12 @@ class PackingContext:
         self._asset_manager = (
             asset_manager  # Example asset manager (could be any object)
         )
+
+        # Per-call serialization options (ephemeral, never persisted).
+        self._options = options or {}  # validated user values (no defaults filled)
+        self._mode = mode  # "save" | "load"
+        self._read_options: set[str] = set()
+        self._option_scope_stack: list[dict[str, "OptionSpec"]] = []
 
         # Parse package versions from metadata if they exist
         if "packages" in metadata:
@@ -78,6 +92,37 @@ class PackingContext:
     def asset_manager(self) -> "AssetManager":
         """Retrieves the asset manager object."""
         return self._asset_manager
+
+    @contextmanager
+    def _option_scope(self, specs: 'dict[str, "OptionSpec"]'):
+        """Make ``specs`` the option declarations visible to ``option()``.
+
+        Pushed by the dispatch wrappers around the body of a single
+        (de)serializer. Nested objects are recursed over *after* the wrapper
+        returns, so the stack is at most one deep during a user function body.
+        """
+        self._option_scope_stack.append(specs)
+        try:
+            yield
+        finally:
+            self._option_scope_stack.pop()
+
+    def option(self, name: str):
+        """Read a declared option from inside a (de)serializer.
+
+        Returns the user-supplied value or, if unset, the declared default. It is
+        scoped to the *currently dispatching* serializer's declarations: reading an
+        option that this serializer did not declare in its ``options=[...]`` raises,
+        which keeps the catalogue authoritative and catches forgot-to-declare bugs.
+        """
+        scope = self._option_scope_stack[-1] if self._option_scope_stack else {}
+        if name not in scope:
+            raise LookupError(
+                f"option({name!r}) was read but the current serializer did not "
+                f"declare it. Add it to the `options=[...]` of its registration."
+            )
+        self._read_options.add(name)
+        return self._options.get(name, scope[name].default)
 
     def __enter__(self):
         set_context(self)
