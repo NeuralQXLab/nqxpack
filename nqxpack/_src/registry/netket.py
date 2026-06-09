@@ -8,10 +8,12 @@ from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
     register_automatic_serialization,
 )
+from nqxpack._src.lib_v1.options import SaveOption
 from nqxpack._src.contextmgr import current_context
 from nqxpack._src.distributed import replicate_sharding
 
 import jax
+import jax.numpy as jnp
 from flax import serialization
 
 # Graph
@@ -233,6 +235,7 @@ register_automatic_serialization(NNXWrapper, "graphdef")
 
 # mcstate
 from netket.vqs import MCMixedState, MCState, FullSumState
+from netket.jax.sharding import shard_along_axis
 
 
 def _replicate(x):
@@ -281,10 +284,24 @@ def serialize_mcstate(
 ) -> dict:
     asset_manager = current_context().asset_manager
 
+    # If saving sample cache, and the cache is there, save it.
+    save_samples = (
+        current_context().option("save_sample_cache") and state._samples is not None
+    )
+
     state_dict = serialization.to_state_dict(state)
+    if save_samples:
+        # netket stores `_sampler_state_previous` to reproduce the cached samples
+        # on reload; since we store the samples, keep the consistent current state.
+        state_dict["sampler_state"] = serialization.to_state_dict(state.sampler_state)
     state_dict = jax.tree.map(_replicate, state_dict)
     variables_structure = jax.tree.structure(state.variables)
     asset_manager.write_msgpack("state.msgpack", state_dict)
+
+    if save_samples:
+        asset_manager.write_msgpack(
+            "samples.msgpack", {"samples": _replicate(state._samples)}
+        )
 
     return {
         "sampler": state.sampler,
@@ -304,10 +321,31 @@ def deserialize_vstate(
     state = cls(**obj, variables=variables)
     state = serialization.from_state_dict(state, state_dict)
 
+    # Self-describing: the samples cache is present iff it was saved with
+    # `save_sample_cache=True`. The restored sampler state is the one consistent
+    # with these samples (see `serialize_mcstate`).
+    if asset_manager.has_asset("samples.msgpack"):
+        samples = jnp.asarray(asset_manager.read_msgpack("samples.msgpack")["samples"])
+        state._samples = shard_along_axis(samples, axis=0)
+
     return state
 
 
-register_serialization(MCState, serialize_mcstate, partial(deserialize_vstate, MCState))
+register_serialization(
+    MCState,
+    serialize_mcstate,
+    partial(deserialize_vstate, MCState),
+    options=[
+        SaveOption(
+            "save_sample_cache",
+            bool,
+            default=False,
+            doc="Store the cached Monte-Carlo samples (`state._samples`) if present "
+            "so they need not be regenerated after reload. **Does not change the samples "
+            "obtained after reloading**. Just the speed!",
+        ),
+    ],
+)
 
 
 def serialize_mcmixedstate(state: MCMixedState) -> dict:
