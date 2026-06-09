@@ -10,6 +10,7 @@ from nqxpack.registry import (
     LoadOption,
     current_context,
 )
+from nqxpack._src.lib_v1.options import register_option
 
 from .. import common
 
@@ -141,3 +142,37 @@ def test_undeclared_option_read_raises(tmp_path):
     register_serialization(Gadget, _bad_serialize, options=[])
     with pytest.raises(LookupError, match="did not declare it"):
         nqxpack.save(Gadget(1), tmp_path / "g.nk")
+
+
+@common.skipif_distributed
+def test_compatible_redeclaration_is_one_knob():
+    # The same name with an identical (type, default, direction) triple may be
+    # declared by several registrations: they describe a single logical knob.
+    spec = SaveOption("test_shared_knob", bool, default=False, doc="shared")
+    register_option(spec)
+    register_option(SaveOption("test_shared_knob", bool, default=False, doc="other"))
+
+    matches = [s for s in nqxpack.list_options("save") if s.name == "test_shared_knob"]
+    assert len(matches) == 1
+
+
+@common.skipif_distributed
+def test_incompatible_redeclaration_raises():
+    register_option(SaveOption("test_clashing_knob", bool, default=False))
+    # Same name, different default -> not the same logical knob.
+    with pytest.raises(ValueError, match="Incompatible redeclaration"):
+        register_option(SaveOption("test_clashing_knob", bool, default=True))
+    # Same name, different direction -> also incompatible.
+    with pytest.raises(ValueError, match="Incompatible redeclaration"):
+        register_option(LoadOption("test_clashing_knob", bool, default=False))
+
+
+@common.skipif_distributed
+def test_list_options_all_directions():
+    all_names = {s.name for s in nqxpack.list_options()}
+    save_names = {s.name for s in nqxpack.list_options("save")}
+    load_names = {s.name for s in nqxpack.list_options("load")}
+    # No-argument listing is the union of both directions.
+    assert save_names | load_names == all_names
+    assert "test_include_extra" in all_names  # a save option
+    assert "test_widget_policy" in all_names  # a load option
