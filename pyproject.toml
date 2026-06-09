@@ -5,10 +5,10 @@ description = "Library to serialise objects arising from scientific and Machine 
 readme = "README.md"
 authors = [{ name = "Filippo Vicentini", email = "filippovicentini@gmail.com" }]
 requires-python = ">=3.11"
-dependencies = ["jax>=0.4.35", "flax>=0.10.2", "numpy>=2", "orjson"]
+dependencies = ["jax>=0.4.35", "flax>=0.12.0", "numpy>=2", "orjson"]
 
 [project.optional-dependencies]
-netket = ["netket>3.18"]
+netket = ["netket>=3.22.3"]
 all = ["nqxpack[netket]", "omegaconf>=2"]
 
 [project.scripts]
@@ -22,10 +22,7 @@ build-backend = "hatchling.build"
 dev = [
     "pre-commit>=4.1.0",
     "pytest>=8.3.4",
-    "flax>=0.10.2",
-    "jax>=0.4.35",
-    "netket>3.18",
-    "numpy>=2",
+    "netket>=3.22.3",
     "omegaconf>=2",
 ]
 docs = [
