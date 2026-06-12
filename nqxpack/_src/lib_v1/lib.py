@@ -34,6 +34,22 @@ PLAIN_TYPES = (int, float, str, bool, type(None))
 
 NUMERIC_TYPES = (int, float, complex)
 
+# Jitted (``jax.jit`` -> ``PjitFunction``) and custom-gradient
+# (``jax.custom_jvp`` / ``jax.custom_vjp``) callables are not
+# ``types.FunctionType``, so they miss the function branch in
+# ``serialize_custom_object``, but they carry a clean ``__module__`` /
+# ``__qualname__`` and can be serialized by reference exactly like a plain
+# function. This is what lets activation functions such as ``jnp.tanh`` (a
+# ``PjitFunction``) or ``jax.nn.relu`` (a ``custom_jvp``) be stored as static
+# attributes of an ``nnx`` module and round-trip. Their concrete wrapper types
+# have no clean public name, so derive the ``PjitFunction`` type from a
+# canonical instance.
+JITTED_CALLABLE_TYPES = (
+    type(jax.jit(lambda _x: _x)),
+    jax.custom_jvp,
+    jax.custom_vjp,
+)
+
 
 @autopath
 def serialize_object(obj):
@@ -98,6 +114,12 @@ def serialize_object(obj):
         # special case NoneType, because it does not exist in builtins but it does in types
         if obj is type(None):
             return "< types.NoneType >"
+        return "< " + _fname(obj) + " >"
+    elif isinstance(obj, JITTED_CALLABLE_TYPES):
+        # Jitted / custom-gradient callables (e.g. jnp.tanh, jax.nn.relu) are
+        # serialized by qualified name, exactly like a plain function. ``_fname``
+        # raises ``MainScopeError`` for anything defined in ``__main__`` (which
+        # cannot be re-imported on load), so the same safeguard applies.
         return "< " + _fname(obj) + " >"
     else:
         return serialize_object(serialize_custom_object(obj))
