@@ -52,3 +52,26 @@ def test_save_fermion_hop_sampler(tmpdir):
 
     assert loaded.hilbert == sampler.hilbert
     _assert_rule_equal(sampler.rule, loaded.rule)
+
+
+# Simple rules without extra state, or with only plain scalar attributes.
+_simple_rules = {
+    "GlobalSpinFlipRule": (nk.sampler.rules.GlobalSpinFlipRule(), {}),
+    "GaussianRule": (nk.sampler.rules.GaussianRule(sigma=2.5), {"sigma": 2.5}),
+    "LangevinRule": (
+        nk.sampler.rules.LangevinRule(dt=0.02, chunk_size=8),
+        {"dt": 0.02, "chunk_size": 8},
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "rule, attrs",
+    [pytest.param(r, a, id=name) for name, (r, a) in _simple_rules.items()],
+)
+def test_save_simple_rule(rule, attrs, tmpdir):
+    loaded = _save_load(rule, tmpdir)
+
+    assert type(loaded) is type(rule)
+    for name, value in attrs.items():
+        assert getattr(loaded, name) == value

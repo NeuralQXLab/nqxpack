@@ -152,7 +152,10 @@ register_automatic_serialization(
 from netket.sampler.rules import (
     ExchangeRule,
     FixedRule,
+    GaussianRule,
+    GlobalSpinFlipRule,
     HamiltonianRule,
+    LangevinRule,
     LocalRule,
     MultipleRules,
     TensorRule,
@@ -160,12 +163,16 @@ from netket.sampler.rules import (
 
 register_automatic_serialization(FixedRule)
 register_automatic_serialization(LocalRule)
+register_automatic_serialization(GlobalSpinFlipRule)
 register_automatic_serialization(ExchangeRule, "clusters", array_to_list=True)
 register_automatic_serialization(
     MultipleRules, "rules", "probabilities", array_to_list=True
 )
 register_automatic_serialization(TensorRule, "hilbert", "rules")
 register_automatic_serialization(HamiltonianRule, "operator")
+# Continuous-space rules
+register_automatic_serialization(GaussianRule, "sigma")
+register_automatic_serialization(LangevinRule, "dt", "chunk_size")
 
 # FermionHopRule extends ExchangeRule but requires a SpinOrbitalFermions hilbert
 # space in its constructor and re-expands the clusters over the spin subsectors
