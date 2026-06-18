@@ -130,7 +130,12 @@ register_automatic_serialization(SumOnPartitionConstraint, "sum_values", "sizes"
 register_automatic_serialization(ExtraConstraint, "base_constraint", "extra_constraint")
 
 # Sampler
-from netket.sampler import MetropolisSampler, ExactSampler
+from netket.sampler import (
+    MetropolisSampler,
+    ExactSampler,
+    ARDirectSampler,
+    ParallelTemperingSampler,
+)
 
 register_automatic_serialization(
     MetropolisSampler,
@@ -146,6 +151,36 @@ register_automatic_serialization(
 )
 register_automatic_serialization(
     ExactSampler, "hilbert", "machine_pow", "dtype", array_to_list=True
+)
+# ARDirectSampler.machine_pow is not a constructor argument (it lives on the
+# model), so we only serialize the hilbert space and the dtype.
+register_automatic_serialization(ARDirectSampler, "hilbert", "dtype")
+
+
+def serialize_ParallelTemperingSampler(sampler):
+    data = {
+        "hilbert": sampler.hilbert,
+        "rule": sampler.rule,
+        "sweep_size": sampler.sweep_size,
+        "reset_chains": sampler.reset_chains,
+        "n_chains": sampler.n_chains,
+        "chunk_size": sampler.chunk_size,
+        "machine_pow": np.asarray(sampler.machine_pow).tolist(),
+        "dtype": sampler.dtype,
+    }
+    # The temperatures are either an explicit (sorted) vector of betas, or a named
+    # distribution ("lin"/"log") together with the number of replicas. These two
+    # ways of specifying them are mutually exclusive in the constructor.
+    if sampler._beta_distribution == "custom":
+        data["betas"] = np.asarray(sampler._beta_sorted).tolist()
+    else:
+        data["betas"] = sampler._beta_distribution
+        data["n_replicas"] = sampler.n_replicas
+    return data
+
+
+register_serialization(
+    ParallelTemperingSampler, serialize_ParallelTemperingSampler
 )
 
 # Sampler Rules
