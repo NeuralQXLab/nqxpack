@@ -167,6 +167,41 @@ register_automatic_serialization(
 register_automatic_serialization(TensorRule, "hilbert", "rules")
 register_automatic_serialization(HamiltonianRule, "operator")
 
+# FermionHopRule extends ExchangeRule but requires a SpinOrbitalFermions hilbert
+# space in its constructor and re-expands the clusters over the spin subsectors
+# when `spin_symmetric=True`. The rule only stores the fully-expanded `clusters`
+# (and `probabilities`), not the hilbert space, so we cannot use the automatic
+# serialization. On deserialization we rebuild it with `spin_symmetric=False` (so
+# the stored clusters are used as-is, without being expanded a second time). The
+# constructor still requires a SpinOrbitalFermions instance for an `isinstance`
+# check, but with `spin_symmetric=False` it is otherwise unused, so a minimal
+# dummy hilbert is sufficient to reconstruct an identical rule.
+from netket.sampler.rules.fermion_2nd import FermionHopRule
+
+
+def serialize_FermionHopRule(rule):
+    res = {"clusters": np.asarray(rule.clusters).tolist()}
+    if rule.probabilities is not None:
+        res["probabilities"] = np.asarray(rule.probabilities).tolist()
+    return res
+
+
+def deserialize_FermionHopRule(data):
+    clusters = np.asarray(data["clusters"])
+    n_orbitals = int(clusters.max()) + 1 if clusters.size else 1
+    dummy_hilbert = SpinOrbitalFermions(n_orbitals)
+    rule = FermionHopRule(
+        dummy_hilbert, clusters=clusters.tolist(), spin_symmetric=False
+    )
+    if "probabilities" in data:
+        rule = rule.replace(probabilities=jnp.asarray(data["probabilities"]))
+    return rule
+
+
+register_serialization(
+    FermionHopRule, serialize_FermionHopRule, deserialize_FermionHopRule
+)
+
 
 # group theory
 from netket.graph.space_group import Translation, Permutation, TranslationGroup
