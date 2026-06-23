@@ -228,9 +228,12 @@ def deserialize_custom_object(obj):
         # First, try to get a versioned deserializer based on the class path string
         deserialization_fun = VERSIONED_DESERIALIZATION_REGISTRY.get(target_str)
         if deserialization_fun is None:
-            # Fall back to resolving the qualname and using default deserialization
+            # Resolving the qualname imports the target's module, which may
+            # register a co-located deserializer; re-check the registry before defaulting.
             target = _resolve_qualname(target_str)
-            deserialization_fun = partial(default_deserialization, target)
+            deserialization_fun = VERSIONED_DESERIALIZATION_REGISTRY.get(target_str)
+            if deserialization_fun is None:
+                deserialization_fun = partial(default_deserialization, target)
 
         try:
             return deserialization_fun(obj)

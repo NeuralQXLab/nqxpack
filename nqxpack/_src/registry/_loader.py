@@ -3,6 +3,8 @@ import importlib
 import importlib.metadata
 import warnings
 
+from nqxpack._src.errors import NQXPackRegistryWarning
+
 # Maps logical name → (registry module path, guard package to probe).
 # guard=None means no external dependency; always load.
 _BUILTIN = {
@@ -60,9 +62,10 @@ def load_all_available() -> None:
                 ep.load()
             except Exception as exc:
                 warnings.warn(
-                    f"nqxpack: failed to load registry plugin '{ep.name}' "
-                    f"from '{ep.value}': {exc}",
-                    ImportWarning,
+                    f"nqxpack: failed to load registry plugin '{ep.name}' from "
+                    f"'{ep.value}': {type(exc).__name__}: {exc}. Types it registers "
+                    f"will fall back to default deserialization and may fail to load.",
+                    NQXPackRegistryWarning,
                     stacklevel=2,
                 )
 

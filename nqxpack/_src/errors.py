@@ -1,3 +1,7 @@
+class NQXPackRegistryWarning(UserWarning):
+    """A declared nqxpack_registry plugin failed to load; its types won't deserialize."""
+
+
 class MainScopeError(Exception):
     def __init__(self, name):
         super().__init__(
