@@ -1,8 +1,8 @@
 # Variables
 config = {
-    "SOT_REPO" : "git@github.com:<sot_repo>.git",
+    "SOT_REPO" : "https://github.com/<sot_repo>.git",
     "SOT_BRANCH" : "<branch_to_sync>",
-    "DESTINATION_REPO" : "git@github.com:<destination_repo>.git",
+    "DESTINATION_REPO" : "https://github.com/<destination_repo>.git",
     "DESTINATION_BRANCH" : "<branch_to_sync>",
     "COMMITTER" : "Quantum AI Lab Bot <quantumailabx@gmail.com>",
     #"LOCAL_SOT" : "file:///usr/src/app",
@@ -28,7 +28,7 @@ def pr_workflow(config, repo_config):
            integrates = [],
            title = "${GITHUB_PR_TITLE}",
            update_description = True,
-           pr_branch = "imported/" + config["DESTINATION_REPO"].replace("git@github.com:", "").replace(".git", "") + "/${CONTEXT_REFERENCE}",
+           pr_branch = "imported/" + config["DESTINATION_REPO"].replace("https://github.com/", "").replace(".git", "") + "/${CONTEXT_REFERENCE}",
        ),
        destination_files = glob(repo_config["PUSH_INCLUDE"], exclude = repo_config["PUSH_EXCLUDE"]),
        origin_files = glob(repo_config["DESTINATION_INCLUDE"], exclude = repo_config["DESTINATION_EXCLUDE"]),
@@ -37,7 +37,7 @@ def pr_workflow(config, repo_config):
        set_rev_id = False,
        transformations = [
            metadata.squash_notes(prefix='Import of ${GITHUB_PR_URL}\n\n**Original PR description:**\n\n${GITHUB_PR_BODY}\n\nImported changes:\n\n', oldest_first = True, show_author=False),
-           metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = config["DESTINATION_REPO"].replace("git@github.com:", " ").replace(".git", "#")),
+           metadata.expose_label("GITHUB_PR_NUMBER", new_name = "Closes", separator = config["DESTINATION_REPO"].replace("https://github.com/", " ").replace(".git", "#")),
            metadata.save_author("ORIGINAL_AUTHOR"),
        ] + repo_config["PR_TRANSFORMATIONS"],
        # after_workflow = [add_comment_with_shadow_pr],
