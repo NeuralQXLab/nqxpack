@@ -1,4 +1,5 @@
 from functools import partial
+import inspect
 import io
 
 import numpy as np
@@ -7,6 +8,7 @@ import numpy as np
 from nqxpack._src.lib_v1.custom_types import (
     register_serialization,
     register_automatic_serialization,
+    register_deserialization,
     has_custom_serializer,
 )
 from nqxpack._src.lib_v1.options import SaveOption
@@ -41,17 +43,43 @@ from netket.hilbert import SpinOrbitalFermions
 from netket.hilbert.constraint import ExtraConstraint
 
 
+# NetKet > 3.23 (netket/netket#2305) removed `Spin(inverted_ordering=)` and only
+# supports the default ordering (`inverted_ordering=False`).
+_SPIN_HAS_INVERTED_ORDERING = (
+    "inverted_ordering" in inspect.signature(Spin.__init__).parameters
+)
+
+
 def serialize_Spin(hi):
-    return {
+    data = {
         "s": hi._s,
         "N": hi.size,
         "total_sz": hi._total_sz,
-        "inverted_ordering": hi._inverted_ordering,
         "constraint": hi.constraint if hi._total_sz is None else None,
     }
+    if _SPIN_HAS_INVERTED_ORDERING:
+        data["inverted_ordering"] = hi._inverted_ordering
+    return data
 
 
+def deserialize_Spin(obj):
+    inverted_ordering = obj.pop("inverted_ordering", None)
+    if _SPIN_HAS_INVERTED_ORDERING:
+        if inverted_ordering is not None:
+            obj["inverted_ordering"] = inverted_ordering
+    elif inverted_ordering:
+        raise ValueError(
+            "This file stores a Spin Hilbert space with `inverted_ordering=True`, "
+            "which is not supported by the installed NetKet version (removed in "
+            "netket/netket#2305). Load it with NetKet <= 3.23."
+        )
+    return Spin(**obj)
+
+
+# The deserializer is registered separately so that the saved `_target_` stays
+# `netket.hilbert.Spin`, keeping new files loadable by older nqxpack versions.
 register_serialization(Spin, serialize_Spin)
+register_deserialization(Spin, deserialize_Spin)
 
 register_automatic_serialization(Qubit, N="size")
 register_automatic_serialization(
